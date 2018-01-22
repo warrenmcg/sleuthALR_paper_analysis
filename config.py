@@ -11,7 +11,7 @@ from os import getenv
 HOME = expanduser('~')
 BASE = HOME + '/sleuth_paper_analysis'
 
-N_THREADS = 40
+N_THREADS = 50
 
 ###
 # software
@@ -19,12 +19,6 @@ N_THREADS = 40
 BIN = BASE + '/software/bin'
 
 KALLISTO = BIN + '/kallisto'
-
-CUFFLINKS = BIN + '/cufflinks'
-
-RSEM_PATH = BASE + '/software/rsem_simulate'
-RSEM_SIMULATE = RSEM_PATH + '/rsem-simulate-reads'
-RSEM_SIMULATE = BIN + '/rsem-simulate-reads'
 
 # UPDATED_PATH = 'PATH=' + ':'.join([
 #     RSEM_PATH,
@@ -41,8 +35,6 @@ SEQTK = BIN + '/seqtk'
 
 BOWTIE = BIN + '/bowtie'
 
-BitSeq_parseAlignment = BIN + '/parseAlignment'
-
 # import os
 
 # os.environ['PATH'] = RSEM_PATH + ':' + os.environ['PATH']
@@ -53,7 +45,7 @@ BitSeq_parseAlignment = BIN + '/parseAlignment'
 ###
 # annotations
 ###
-TRANSCRIPTOME_NAME = 'Homo_sapiens.GRCh38.cdna.all.rel80'
+TRANSCRIPTOME_NAME = 'Homo_sapiens.GRCh38.cdna.all.rel87'
 TRANSCRIPTOME_FA = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.fa'
 TRANSCRIPTOME_GTF = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.gtf'
 
@@ -61,8 +53,9 @@ TRANSCRIPTOME_GTF = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.gtf'
 BOWTIE_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME
 
 KALLISTO_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME + '.kidx'
+SALMON_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME + '.sidx'
 
-GENOME_NAME = 'Homo_sapiens.GRCh38.dna.primary_assembly.rel80'
+GENOME_NAME = 'Homo_sapiens.GRCh38.dna.primary_assembly.rel87'
 GENOME_FA = BASE + '/annotation/' + GENOME_NAME + '.fa'
 
 # STAR_DIRECTORY = BASE + '/index/star_' + TRANSCRIPTOME_NAME
@@ -75,16 +68,15 @@ RSEM_ANNOTATION_DIR = '/'.join([
     BASE,
     'annotation',
     TRANSCRIPTOME_NAME + '_rsem'])
-RSEM_ANNOTATION = RSEM_ANNOTATION_DIR + '/ref'
-RSEM_MODEL = BASE + '/geuvadis/results/rsem/HG00365_7/out.stat/out.model'
 
-MOUSE_NAME = 'Mus_musculus.GRCm38.cdna.all.rel84'
+MOUSE_NAME = 'Mus_musculus.GRCm38.cdna.all.rel87'
 MOUSE_TRANSCRIPTOME_FA = BASE + '/annotation/' + MOUSE_NAME + '.fa'
 MOUSE_TRANSCRIPTOME_GTF = BASE + '/annotation/' + MOUSE_NAME + '.gtf'
 
 MOUSE_KALLISTO_INDEX = BASE + '/index/' + MOUSE_NAME + '.kidx'
+MOUSE_SALMON_INDEX = BASE + '/index/' + MOUSE_NAME + '.sidx'
 
-MOUSE_GENOME_NAME = 'Mus_musculus.GRCm38.dna.primary_assembly.rel84'
+MOUSE_GENOME_NAME = 'Mus_musculus.GRCm38.dna.primary_assembly.rel87'
 MOUSE_GENOME_FA = BASE + '/annotation/' + MOUSE_GENOME_NAME + '.fa'
 
 MOUSE_HISAT_INDEX = BASE + '/index/' + MOUSE_GENOME_NAME
