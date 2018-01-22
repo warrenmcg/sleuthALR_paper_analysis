@@ -1,9 +1,9 @@
 #!/bin/bash
 
-NUMBER_OF_CORES=40
+NUMBER_OF_CORES=50
 
 # add additional paths to run snakemake on here
-PATHS_TO_RUN=("software" "annotation" "cuffdiff2_analysis" "bottomly" "geuvadis" ".")
+PATHS_TO_RUN=("software" "annotation" "bottomly" "geuvadis" ".")
 
 ARGUMENTS="-p -j ${NUMBER_OF_CORES} --dryrun"
 
