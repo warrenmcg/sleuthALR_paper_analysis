@@ -1,8 +1,6 @@
 .libPaths(c("~/R_library", .libPaths()))
 args <- commandArgs(trailing = TRUE)
 
-# geuvadis_base <- '../results/finn_samples'
-
 if (length(args) != 1) {
   stop('Must supply only 1 argument (the number of cores).')
 }
@@ -24,15 +22,6 @@ transcript_gene_mapping <- get_human_gene_names()
 
 
 sample_info <- readRDS('../results/finn_subsamples.rds')
-
-# sleuth_results <- mclapply(1:sim$n,
-#   function(i) {
-#     si <- sample_info[[i]]
-#     res <- run_sleuth(si)
-#     res$counts <- sleuth:::spread_abundance_by(res$so$obs_raw, "est_counts")
-#     res$so <- NULL
-#     res
-#   })
 
 sleuth_training <- mclapply(sample_info,
   function(training) {
@@ -73,13 +62,6 @@ all_training <- list()
 all_training$sleuth.lrt <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 all_training$sleuth.wt <- lapply(sleuth_training, '[[', 'sleuth.wt')
 
-all_training$DESeq <- mclapply(seq_along(sample_info),
-  function(i) {
-    training <- sample_info[[i]]
-    obs <- obs_raw[[i]]
-    DESeq_filter_and_run(obs, training, dummy_filter)$result
-  })
-
 all_training$DESeq2 <- mclapply(seq_along(sample_info),
   function(i) {
     training <- sample_info[[i]]
@@ -102,20 +84,6 @@ all_training$limmaVoom <- mclapply(seq_along(sample_info),
     sf <- sleuth_filter_bool[[i]]
     limma_filter_and_run(obs, training, sf)$result
   })
-
-NG_LIST <- GetNg(transcript_gene_mapping$target_id,
-  transcript_gene_mapping$ens_gene)
-
-# use the sleuth filter since EBSeq doesn't have a recommended filter
-# debugonce(EBSeq_isoform_filter_and_run)
-all_training$EBSeq <- mclapply(seq_along(sample_info),
-  function(i) {
-    training <- sample_info[[i]]
-    obs <- obs_raw[[i]]
-    sf <- sleuth_filter_bool[[i]]
-    EBSeq_isoform_filter_and_run(obs, training, sf)$result
-  })
-
 
 # do some renaming
 all_training$sleuth <- all_training$sleuth.lrt
