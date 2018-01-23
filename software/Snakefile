@@ -16,6 +16,12 @@ rule get_versions:
     shell:
         source_rmd('.', 'versions.Rmd')
 
+rule get_r_pkgs:
+    output:
+        'r_pkg_install_success.txt'
+    shell:
+        source_r('.', 'r_pkg_install.R')
+
 rule get_kallisto:
     output:
         KALLISTO
