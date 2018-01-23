@@ -45,7 +45,7 @@ BOWTIE = BIN + '/bowtie'
 ###
 # annotations
 ###
-TRANSCRIPTOME_NAME = 'Homo_sapiens.GRCh38.cdna.all.rel87'
+TRANSCRIPTOME_NAME = 'Homo_sapiens.gencode.v25'
 TRANSCRIPTOME_FA = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.fa'
 TRANSCRIPTOME_GTF = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.gtf'
 
@@ -69,7 +69,7 @@ RSEM_ANNOTATION_DIR = '/'.join([
     'annotation',
     TRANSCRIPTOME_NAME + '_rsem'])
 
-MOUSE_NAME = 'Mus_musculus.GRCm38.cdna.all.rel87'
+MOUSE_NAME = 'Mus_musculus.gencode.vM12'
 MOUSE_TRANSCRIPTOME_FA = BASE + '/annotation/' + MOUSE_NAME + '.fa'
 MOUSE_TRANSCRIPTOME_GTF = BASE + '/annotation/' + MOUSE_NAME + '.gtf'
 

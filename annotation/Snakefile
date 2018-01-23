@@ -26,10 +26,12 @@ rule get_transcriptome:
     output:
         TRANSCRIPTOME_FA
     shell:
-        'curl -o {output}.gz'
+        'curl -o gencode.v25.transcripts.fa.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-87/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz && '
-        ' gunzip {output}.gz'
+        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_25/gencode.v25.transcripts.fa.gz && '
+        ' gunzip gencode.v25.transcripts.fa.gz && '
+        ' awk -F\'|\' \'{print $1}\' gencode.v25.transcripts.fa > {output} && '
+        ' rm gencode.v25.transcripts.fa'
 
 rule get_genome:
     output:
@@ -45,10 +47,13 @@ rule get_gtf:
     output:
         TRANSCRIPTOME_GTF
     shell:
-        'curl -o {output}.gz'
+        'curl -o gencode.v25.primary_assembly.annotation.gtf.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-87/gtf/homo_sapiens/Homo_sapiens.GRCh38.87.gtf.gz && '
-        ' gunzip {output}.gz'
+        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_25/gencode.v25.primary_assembly.annotation.gtf.gz && '
+        ' gunzip gencode.v25.primary_assembly.annotation.gtf.gz && '
+        ' sed \'s/^chr//\' gencode.v25.primary_assembly.annotation.gtf > gencode.v25.gtf && '
+        ' sed \'s/^M/MT/\' gencode.v25.gtf > {output} && '
+        ' rm gencode.v25.primary_assembly.annotation.gtf gencode.v25.gtf'
 
 rule make_hisat_index:
     input:
@@ -96,19 +101,24 @@ rule get_mouse_transcriptome:
     output:
         MOUSE_TRANSCRIPTOME_FA
     shell:
-        'curl -o {output}.gz'
+        'curl -o gencode.vM12.transcripts.fa.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-87/fasta/mus_musculus/cdna/Mus_musculus.GRCm38.cdna.all.fa.gz && '
-        ' gunzip {output}.gz'
+        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M12/gencode.vM12.transcripts.fa.gz && '
+        ' gunzip gencode.vM12.transcripts.fa.gz && '
+        ' awk -F\'|\' \'{print $1}\' "gencode.vM12.transcripts.fa" > {output} && '
+        ' rm gencode.vM12.transcripts.fa'
 
 rule get_mouse_gtf:
     output:
-        MOUSE_TRANSCRIPTOME_GTF
+        TRANSCRIPTOME_GTF
     shell:
-        'curl -o {output}.gz'
+        'curl -o gencode.vM12.primary_assembly.annotation.gtf.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-87/gtf/mus_musculus/Mus_musculus.GRCm38.87.gtf.gz && '
-        ' gunzip {output}.gz'
+        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_25/gencode.vM12.primary_assembly.annotation.gtf.gz && '
+        ' gunzip gencode.vM12.primary_assembly.annotation.gtf.gz && '
+        ' sed \'s/^chr//\' gencode.vM12.primary_assembly.annotation.gtf > gencode.vM12.gtf && '
+        ' sed \'s/^M/MT/\' gencode.vM12.gtf > {output} && '
+        ' rm gencode.vM12.primary_assembly.annotation.gtf gencode.vM12.gtf'
 
 rule kallisto_mouse_index:
     input:
