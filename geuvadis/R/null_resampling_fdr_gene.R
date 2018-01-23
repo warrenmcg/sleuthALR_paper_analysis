@@ -67,6 +67,22 @@ sleuth_training <- mclapply(seq_along(training_sets),
   })
 all_training$sleuth <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 
+denom <- "ENSG00000116350.16"
+alr_training <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    alr <- run_alr(training, denom = denom, gene_column = "ens_gene", num_cores = 1)
+    list(sleuthALR.lrt = alr$sleuthALR.lrt, sleuthALR.wt = alr$sleuthALR.wt)
+  })
+all_training$`sleuth-ALR` <- lapply(alr_training, '[[', 'sleuthALR.lrt')
+
+all_training$ALDEx2 <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- training_counts[[i]]
+    aldex2_filter_and_run(obs, denom = 'iqlr', training, dummy_filter, "wilcoxon")$result
+  })
+
 all_training$DESeq2 <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -103,7 +119,6 @@ all_training$voom <- mclapply(seq_along(training_sets),
 oracle <- data.frame(target_id = names(dummy_filter), is_de = FALSE,
   log_fc = NA, stringsAsFactors = FALSE)
 oracle <- lapply(1:length(sleuth_training), function(i) oracle)
-
 
 self_benchmark <- lapply(seq_along(all_training),
   function(i) {
