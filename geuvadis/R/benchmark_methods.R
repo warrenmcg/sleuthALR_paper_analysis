@@ -12,30 +12,30 @@ library("sleuth")
 get_human_gene_names <- function() {
   mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
     dataset = "hsapiens_gene_ensembl",
-    host = "may2015.archive.ensembl.org")
-    # host = "ensembl.org")
+    host = "dec2016.archive.ensembl.org")
   ttg <- biomaRt::getBM(
-    attributes = c("ensembl_transcript_id", "ensembl_gene_id", "external_gene_name"),
+    attributes = c("ensembl_transcript_id", "transcript_version",
+      "ensembl_gene_id", "version", "external_gene_name"),
     mart = mart)
-  ttg <- dplyr::rename(ttg, target_id = ensembl_transcript_id,
-    ens_gene = ensembl_gene_id, ext_gene = external_gene_name)
+  ttg <- dplyr::mutate(ttg, target_id = paste(ensembl_transcript_id, transcript_version, sep = "."),
+    ens_gene = paste(ensembl_gene_id, version, sep = "."))
+  ttg <- dplyr::rename(ttg, ext_gene = external_gene_name)
+  ttg <- dplyr::select(ttg, target_id, ens_gene, ext_gene)
   ttg
 }
 
 get_mouse_gene_names <- function() {
   mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
     dataset = "mmusculus_gene_ensembl",
-    host = "dec2015.archive.ensembl.org")
-    # host = "ensembl.org")
+    host = "dec2016.archive.ensembl.org")
   ttg <- biomaRt::getBM(
     attributes = c("ensembl_transcript_id", "transcript_version",
-    "ensembl_gene_id", "external_gene_name", "description",
-    "transcript_biotype"),
+    "ensembl_gene_id", "external_gene_name", "version"),
     mart = mart)
-  ttg <- dplyr::rename(ttg,
-    ens_gene = ensembl_gene_id, ext_gene = external_gene_name)
-  ttg <- dplyr::mutate(ttg, target_id = paste(ensembl_transcript_id,
-    transcript_version, sep="."))
+  ttg <- dplyr::rename(ttg, ext_gene = external_gene_name)
+  ttg <- dplyr::mutate(ttg, ens_gene = paste(ensembl_gene_id, version, sep="."),
+    target_id = paste(ensembl_transcript_id, transcript_version, sep="."))
+  ttg <- dplyr::select(ttg, target_id, ens_gene, ext_gene)
   ttg
 }
 
