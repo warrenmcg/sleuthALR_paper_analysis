@@ -4,9 +4,7 @@
 library("data.table")
 
 library("Biobase")
-library("DESeq")
 library("DESeq2")
-library("EBSeq")
 library("edgeR")
 library("limma")
 library("sleuth")
@@ -21,7 +19,6 @@ get_human_gene_names <- function() {
     mart = mart)
   ttg <- dplyr::rename(ttg, target_id = ensembl_transcript_id,
     ens_gene = ensembl_gene_id, ext_gene = external_gene_name)
-
   ttg
 }
 
@@ -73,18 +70,6 @@ edgeR_filter <- function(mat, ...) {
 
 DESeq2_filter <- function(mat, ...) {
   rowSums(mat) > 1
-}
-
-DESeq_filter <- function(mat, ...) {
-  # a modified version of the DESeq filter to first remove things that are 0
-  # before doing the quantile filter
-  nonzero <- DESeq2_filter(mat)
-  rs <- rowSums(mat[nonzero, ])
-  theta <- 0.4
-  use <- (rs > quantile(rs, probs=theta))
-  ret <- nonzero
-  ret[nonzero] <- use
-  ret
 }
 
 #' create benchmark objects against a reference
@@ -388,19 +373,6 @@ DESeq2_filter_and_run_intersect <- function(counts, stc, match_filter, # nolint
   list(result = res, filter = match_filter)
 }
 
-DESeq_filter_and_run <- function(count_matrix, stc, sleuth_filter) { # nolint
-  count_matrix <- round(count_matrix)
-  mode(count_matrix) <- 'integer'
-  which_targets <- DESeq_filter(count_matrix)
-  sleuth_filter <- sleuth_filter & which_targets
-  cds <- make_count_data_set(count_matrix[sleuth_filter, ], stc)
-  res <- runDESeq(cds, FALSE, FALSE)
-
-  sleuth_filter <- names(which(sleuth_filter))
-
-  list(result = res, filter = sleuth_filter)
-}
-
 edgeR_filter_and_run <- function(counts, stc, match_filter, is_counts = TRUE) {
   if (is_counts) {
     counts <- round(counts)
@@ -433,164 +405,6 @@ edgeR_filter_and_run <- function(counts, stc, match_filter, is_counts = TRUE) {
   match_filter <- names(which(match_filter))
 
   list(result = res, filter = match_filter)
-}
-
-lfc_filter_and_run <- function(count_matrix, stc, sleuth_filter) {
-  which_targets <- edgeR_filter(count_matrix)
-  sleuth_filter <- sleuth_filter & which_targets
-
-  conditionA <- dplyr::filter(stc, condition == 'A')$sample
-  conditionB <- dplyr::filter(stc, condition == 'B')$sample
-
-  counts <- count_matrix[sleuth_filter, ]
-  sf <- DESeq2::estimateSizeFactorsForMatrix(counts)
-  counts_norm <- t(t(counts) / sf)
-
-  B <- rowMeans(counts_norm[, conditionB])
-  A <- rowMeans(counts_norm[, conditionA])
-  lfc <- log(B) - log(A)
-
-  res <- data.frame(target_id = names(lfc), abs_lfc = abs(lfc))
-  res <- dplyr::arrange(res, desc(abs_lfc))
-  res <- dplyr::mutate(res, test_stat = rank(-abs_lfc,
-    ties.method= "random") / length(-abs_lfc))
-  res <- dplyr::select(res, target_id, pval = test_stat)
-  res <- dplyr::mutate(res, qval = pval)
-
-  sleuth_filter <- names(which(sleuth_filter))
-
-  list(result = res, filter = sleuth_filter)
-}
-
-lfc_filter_and_run_isoform <- function(count_matrix, stc, filter_input) {
-  which_targets <- sleuth_filter(count_matrix)
-  filter_input <- filter_input & which_targets
-
-  conditionA <- dplyr::filter(stc, condition == 'A')$sample
-  conditionB <- dplyr::filter(stc, condition == 'B')$sample
-
-  counts <- count_matrix[filter_input, ]
-  sf <- DESeq2::estimateSizeFactorsForMatrix(counts)
-  counts_norm <- t(t(counts) / sf)
-
-  B <- rowMeans(counts_norm[, conditionB])
-  A <- rowMeans(counts_norm[, conditionA])
-  lfc <- log(B) - log(A)
-
-  res <- data.frame(target_id = names(lfc), abs_lfc = abs(lfc))
-  res <- dplyr::arrange(res, desc(abs_lfc))
-  res <- dplyr::mutate(res, test_stat = rank(-abs_lfc,
-    ties.method= "random") / length(-abs_lfc))
-  res <- dplyr::select(res, target_id, pval = test_stat)
-  res <- dplyr::mutate(res, qval = pval)
-
-  filter_input <- names(which(filter_input))
-
-  list(result = res, filter = filter_input)
-}
-
-geometric_lfc_filter_and_run <- function(count_matrix, stc, sleuth_filter) {
-  which_targets <- edgeR_filter(count_matrix)
-  sleuth_filter <- sleuth_filter & which_targets
-
-  conditionA <- dplyr::filter(stc, condition == 'A')$sample
-  conditionB <- dplyr::filter(stc, condition == 'B')$sample
-
-  counts <- count_matrix[sleuth_filter, ]
-  sf <- DESeq2::estimateSizeFactorsForMatrix(counts)
-  counts_norm <- t(t(counts) / sf)
-  counts_norm <- log(counts_norm + 0.5)
-
-  B <- rowMeans(counts_norm[, conditionB])
-  A <- rowMeans(counts_norm[, conditionA])
-  lfc <- B - A
-
-  res <- data.frame(target_id = names(lfc), abs_lfc = abs(lfc))
-  res <- dplyr::arrange(res, desc(abs_lfc))
-  res <- dplyr::mutate(res, test_stat = rank(-abs_lfc,
-    ties.method= "random") / length(-abs_lfc))
-  res <- dplyr::select(res, target_id, pval = test_stat)
-  res <- dplyr::mutate(res, qval = pval)
-
-  sleuth_filter <- names(which(sleuth_filter))
-
-  list(result = res, filter = sleuth_filter)
-}
-
-geometric_lfc_filter_and_run_isoform <- function(count_matrix, stc, filter_input) {
-  which_targets <- sleuth_filter(count_matrix)
-  filter_input <- filter_input & which_targets
-
-  conditionA <- dplyr::filter(stc, condition == 'A')$sample
-  conditionB <- dplyr::filter(stc, condition == 'B')$sample
-
-  counts <- count_matrix[filter_input, ]
-  sf <- DESeq2::estimateSizeFactorsForMatrix(counts)
-  counts_norm <- t(t(counts) / sf)
-  counts_norm <- log(counts_norm + 0.5)
-
-  B <- rowMeans(counts_norm[, conditionB])
-  A <- rowMeans(counts_norm[, conditionA])
-  lfc <- B - A
-
-  res <- data.frame(target_id = names(lfc), abs_lfc = abs(lfc))
-  res <- dplyr::arrange(res, desc(abs_lfc))
-  res <- dplyr::mutate(res, test_stat = rank(-abs_lfc,
-    ties.method= "random") / length(-abs_lfc))
-  res <- dplyr::select(res, target_id, pval = test_stat)
-  res <- dplyr::mutate(res, qval = pval)
-
-  filter_input <- names(which(filter_input))
-
-  list(result = res, filter = filter_input)
-}
-
-cuffdiff_filter_and_run <- function(count_matrix, stc, sleuth_filter) {
-  # ignore the count_matrix
-  base_name <- dirname(dirname(stc$path[1]))
-  base_name <- file.path(base_name, 'results', 'cuffdiff')
-  res <- get_cuffdiff(base_name)$isoform
-  res <- dplyr::filter(res, status == 'OK')
-
-  sleuth_filter <- names(which(sleuth_filter))
-
-  sleuth_filter <- res$target_id
-
-  list(result = res, filter = sleuth_filter)
-}
-
-cuffdiff_filter_and_run_gene <- function(count_matrix, stc, sleuth_filter) {
-  # ignore the count_matrix
-  base_name <- dirname(dirname(stc$path[1]))
-  base_name <- file.path(base_name, 'results', 'cuffdiff')
-  res <- get_cuffdiff(base_name)$gene
-  res <- dplyr::filter(res, status == 'OK')
-
-  sleuth_filter <- names(which(sleuth_filter))
-
-  sleuth_filter <- res$target_id
-
-  list(result = res, filter = sleuth_filter)
-}
-
-EBSeq_isoform_filter_and_run <- function(count_matrix, stc, sleuth_filter) {
-  # a subset of things don't have gene names in biomaRt
-  sleuth_filter <- intersect(names(which(sleuth_filter)),
-    names(NG_LIST$IsoformNgTrun))
-  cds <- make_count_data_set(count_matrix[sleuth_filter, ], stc)
-  res <- EBSeq_isoform(cds, FALSE, FALSE)
-
-  list(result = res, filter = sleuth_filter)
-}
-
-EBSeq_gene_filter_and_run <- function(count_matrix, stc, sleuth_filter) {
-  which_targets <- DESeq2_filter(count_matrix)
-  sleuth_filter <- sleuth_filter & which_targets
-  cds <- make_count_data_set(count_matrix[sleuth_filter, ], stc)
-  res <- runEBSeq(cds, FALSE, FALSE)
-  sleuth_filter <- names(which(sleuth_filter))
-
-  list(result = res, filter = sleuth_filter)
 }
 
 #' generate `sample_to_condition` that sleuth is expecting
@@ -637,18 +451,10 @@ make_count_data_set <- function(counts, sample_info) {
   ExpressionSet(counts, AnnotatedDataFrame(sample_info))
 }
 
-run_sleuth_prep <- function(sample_info, max_bootstrap = 30,
-  filter_target_id = NULL, gene_mode = NULL, zero_technical_variance = FALSE,
-  poisson_technical_variance = FALSE,
+run_sleuth_prep <- function(sample_info, max_bootstrap = 30, gene_column = NULL,
   ...) {
   so <- sleuth_prep(sample_info, ~ condition, max_bootstrap = max_bootstrap,
     target_mapping = transcript_gene_mapping,
-    filter_target_id = filter_target_id,
-    gene_mode = gene_mode,
-    norm_by_abundance = TRUE,
-    # norm_by_length = TRUE,
-    zero_technical_variance = zero_technical_variance,
-    poisson_technical_variance = poisson_technical_variance,
     ...)
   so <- sleuth_fit(so)
 
@@ -661,28 +467,20 @@ run_sleuth <- function(sample_info,
   gene_mode = NULL,
   gene_column = NULL,
   filter_target_id = NULL,
-  zero_technical_variance = FALSE,
-  poisson_technical_variance = FALSE,
-  which_bio_var = 'smooth_sigma_sq_pmax',
   ...) {
 
   so <- NULL
   if (!is.null(gene_column)) {
     so <- run_sleuth_prep(sample_info, max_bootstrap = max_bootstrap,
-      filter_target_id = filter_target_id, gene_mode = gene_column,
-      zero_technical_variance = zero_technical_variance,
-      poisson_technical_variance = poisson_technical_variance,
+       aggregation_column = gene_column,
       ...)
   } else {
   so <- run_sleuth_prep(sample_info, max_bootstrap = max_bootstrap,
-    filter_target_id = filter_target_id,
-    zero_technical_variance = zero_technical_variance,
-    poisson_technical_variance = poisson_technical_variance,
     ...)
   }
   so <- sleuth_wt(so, 'conditionB')
   so <- sleuth_fit(so, ~ 1, 'reduced')
-  so <- sleuth_lrt(so, 'reduced', 'full', which_bio_var = which_bio_var)
+  so <- sleuth_lrt(so, 'reduced', 'full')
 
   res <- NULL
   if (is.null(gene_mode)) {
@@ -748,75 +546,6 @@ rename_target_id <- function(df, as_gene = FALSE) {
   }
 }
 
-get_cuffdiff <- function(results_path) {
-  isoform_de <- suppressWarnings(
-    data.table::fread(file.path(results_path, 'isoform_exp.diff'),
-      header = TRUE, stringsAsFactors = FALSE, sep = '\t', data.table = FALSE))
-  isoform_de <- dplyr::select(isoform_de,
-    target_id = test_id,
-    ens_gene = gene_id,
-    status,
-    pval = p_value,
-    qval = q_value,
-    beta = one_of("log2(fold_change)")
-    )
-
-  gene_de <- suppressWarnings(
-    data.table::fread(file.path(results_path, 'gene_exp.diff'),
-      header = TRUE, stringsAsFactors = FALSE, sep = '\t', data.table = FALSE))
-  gene_de <- dplyr::select(gene_de,
-    target_id = test_id,
-    ens_gene = gene_id,
-    status,
-    pval = p_value,
-    qval = q_value,
-    beta = one_of("log2(fold_change)")
-    )
-
-  list(isoform = isoform_de, gene = gene_de)
-}
-
-
-EBSeq_isoform <- function(e, as_gene = TRUE, method_filtering = FALSE) {
-  # this assumes that we have a global variable `NG_LIST`
-  # that has been generated using EBSeq::GetNg(transcript_gene_mapping...)
-  isoforms_per_gene <- NG_LIST$IsoformNgTrun
-  isoforms_per_gene <- isoforms_per_gene[rownames(exprs(e))]
-
-  sizes <- MedianNorm(exprs(e))
-  out <- capture.output({
-    suppressMessages({
-      res <- EBTest(Data = exprs(e),
-        NgVector = isoforms_per_gene,
-        Conditions = pData(e)$condition,
-        sizeFactors = sizes,
-        maxround = 15)
-    })
-  })
-  print("Alpha")
-  print(res$Alpha)
-  print("Beta")
-  print(res$Beta)
-  n_it <- nrow(res$Alpha)
-  convergence_limit <- 1e-3
-  cat("Alpha converged: ",
-    abs(res$Alpha[n_it, 1] - res$Alpha[n_it - 1, 1]) < convergence_limit, "\n")
-  cat("Beta converged: ",
-    abs(res$Beta[n_it, ] - res$Beta[n_it - 1, ]) < convergence_limit, "\n")
-  padj <- rep(1, nrow(exprs(e)))
-  # we use 1 - PPDE for the FDR cutoff as this is recommended in the EBSeq vignette
-  padj[match(rownames(res$PPMat), rownames(e))] <- res$PPMat[,"PPEE"]
-  beta <- rep(0, nrow(exprs(e)))
-
-  rename_target_id(
-    data.frame(target_id = rownames(res$PPMat),
-      pval = padj,
-      qval = padj,
-      beta = beta
-      ),
-    as_gene = as_gene)
-}
-
 # The code below is a slightly modified version of the code from `DESeq2paper`
 # http://www-huber.embl.de/DESeq2paper/
 runDESeq2 <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE) {
@@ -848,32 +577,6 @@ runDESeq2 <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRU
       stringsAsFactors = FALSE),
     as_gene = as_gene)
 }
-
-runDESeq <- function(e, as_gene = TRUE, compute_filter = FALSE) {
-  cds <- newCountDataSet(exprs(e), pData(e)$condition)
-  if (compute_filter) {
-    rs <- rowSums ( counts ( cds ))
-    theta <- 0.4
-    use <- (rs > quantile(rs, probs=theta))
-    # cds <- cds[use, ]
-    cds <- newCountDataSet(counts(cds)[use, ], pData(e)$condition)
-  }
-  cds <- DESeq::estimateSizeFactors(cds)
-  cds <- DESeq::estimateDispersions(cds)
-  suppressWarnings({capture.output({fit1 <- DESeq::fitNbinomGLMs(cds, count ~ condition)})})
-  suppressWarnings({capture.output({fit0 <- DESeq::fitNbinomGLMs(cds, count ~ 1)})})
-  pvals <- DESeq::nbinomGLMTest(fit1, fit0)
-  # pvals[rowSums(exprs(e)) == 0] <- NA
-  padj <- p.adjust(pvals,method="BH")
-  padj[is.na(padj)] <- 1
-  # return(list(pvals=pvals, padj=padj, beta=fit1$conditionB))
-  rename_target_id(
-    data.frame(target_id = rownames(cds),
-      pval = pvals, qval = padj,
-      stringsAsFactors = FALSE),
-    as_gene = as_gene)
-}
-
 
 runEdgeR <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE, design = NULL) {
   if (is_counts) {
@@ -967,31 +670,6 @@ runVoom <- function(e, as_gene = TRUE, compute_filter = FALSE) {
     stringsAsFactors = FALSE),
   as_gene = as_gene)
 }
-
-runEBSeq <- function(e, as_gene = TRUE, method_filtering = FALSE) {
-  sizes <- MedianNorm(exprs(e))
-  out <- capture.output({
-    suppressMessages({
-      res <- EBTest(Data = exprs(e),
-                    Conditions = pData(e)$condition,
-                    sizeFactors = sizes,
-                    maxround = 5)
-    })
-  })
-  padj <- rep(1, nrow(exprs(e)))
-  # we use 1 - PPDE for the FDR cutoff as this is recommended in the EBSeq vignette
-  padj[match(rownames(res$PPMat), rownames(e))] <- res$PPMat[,"PPEE"]
-  beta <- rep(0, nrow(exprs(e)))
-
-  rename_target_id(
-    data.frame(target_id = rownames(res$PPMat),
-      pval = padj,
-      qval = padj,
-      beta = beta
-      ),
-    as_gene = as_gene)
-}
-
 
 # these methods used right now and need to be updated
 
