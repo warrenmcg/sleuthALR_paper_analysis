@@ -6,13 +6,11 @@ rule all:
         # human
         ###
         TRANSCRIPTOME_FA,
-        RSEM_ANNOTATION + '.grp',
         TRANSCRIPTOME_GTF,
         KALLISTO_INDEX,
+        SALMON_INDEX,
         GENOME_FA,
         expand('{base}.{idx}.ht2', base = HISAT_INDEX, idx = (1, 6)),
-        expand('{base}.{idx}.ebwt', base = BOWTIE_INDEX, idx = (1, 4)),
-
 
         ###
         # mouse
@@ -20,6 +18,7 @@ rule all:
         MOUSE_TRANSCRIPTOME_FA,
         MOUSE_TRANSCRIPTOME_GTF,
         MOUSE_KALLISTO_INDEX,
+        MOUSE_SALMON_INDEX,
         MOUSE_GENOME_FA,
         expand('{base}.{idx}.ht2', base = MOUSE_HISAT_INDEX, idx = (1, 6))
 
@@ -29,7 +28,7 @@ rule get_transcriptome:
     shell:
         'curl -o {output}.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-80/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz && '
+        ' ftp://ftp.ensembl.org/pub/release-87/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz && '
         ' gunzip {output}.gz'
 
 rule get_genome:
@@ -38,7 +37,7 @@ rule get_genome:
     shell:
         'curl -o {output}'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-80/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz'
+        ' ftp://ftp.ensembl.org/pub/release-87/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz'
         ' && '
         'gunzip {output}.gz'
 
@@ -48,17 +47,8 @@ rule get_gtf:
     shell:
         'curl -o {output}.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-80/gtf/homo_sapiens/Homo_sapiens.GRCh38.80.gtf.gz && '
+        ' ftp://ftp.ensembl.org/pub/release-87/gtf/homo_sapiens/Homo_sapiens.GRCh38.87.gtf.gz && '
         ' gunzip {output}.gz'
-
-rule make_rsem_transcriptome:
-    input:
-        TRANSCRIPTOME_FA
-    output:
-        RSEM_ANNOTATION + '.grp'
-    shell:
-        'mkdir -p {RSEM_ANNOTATION_DIR};'
-        ' {UPDATED_PATH} rsem-prepare-reference {input} {RSEM_ANNOTATION_DIR}/ref'
 
 rule make_hisat_index:
     input:
@@ -85,18 +75,19 @@ rule kallisto_index:
         ' -i {output}'
         ' {input}'
 
-rule bowtie_index:
+rule salmon_index:
     input:
         TRANSCRIPTOME_FA
+    threads:
+        N_THREADS
     output:
-        expand('{base}.{idx}.ebwt', base = BOWTIE_INDEX, idx = (1, 4)),
-        expand('{base}.rev.{idx}.ebwt', base = BOWTIE_INDEX, idx = (1, 2))
+        SALMON_INDEX
     shell:
         '{UPDATED_PATH} '
-        'bowtie-build'
-        ' -f --ntoa' # arguments recommended in BitSeq vignette
-        ' {input}'
-        ' {BOWTIE_INDEX}'
+        'salmon index'
+        ' -i {output}'
+        ' -p {threads}'
+        ' -t {input}'
 
 ###
 # mouse stuff
@@ -107,7 +98,7 @@ rule get_mouse_transcriptome:
     shell:
         'curl -o {output}.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-84/fasta/mus_musculus/cdna/Mus_musculus.GRCm38.cdna.all.fa.gz && '
+        ' ftp://ftp.ensembl.org/pub/release-87/fasta/mus_musculus/cdna/Mus_musculus.GRCm38.cdna.all.fa.gz && '
         ' gunzip {output}.gz'
 
 rule get_mouse_gtf:
@@ -116,7 +107,7 @@ rule get_mouse_gtf:
     shell:
         'curl -o {output}.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-84/gtf/mus_musculus/Mus_musculus.GRCm38.84.gtf.gz && '
+        ' ftp://ftp.ensembl.org/pub/release-87/gtf/mus_musculus/Mus_musculus.GRCm38.87.gtf.gz && '
         ' gunzip {output}.gz'
 
 rule kallisto_mouse_index:
@@ -131,13 +122,27 @@ rule kallisto_mouse_index:
         ' -k 21'
         ' {input}'
 
+rule salmon_mouse_index:
+    input:
+        MOUSE_TRANSCRIPTOME_FA
+    threads:
+        N_THREADS
+    output:
+        MOUSE_SALMON_INDEX
+    shell:
+        '{UPDATED_PATH} '
+        'salmon index'
+        ' -i {output}'
+        ' -p {threads}'
+        ' -t {input}'
+
 rule get_mouse_genome:
     output:
         MOUSE_GENOME_FA
     shell:
         'curl -o {output}.gz'
         ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-84/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
+        ' ftp://ftp.ensembl.org/pub/release-87/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
         ' && '
         'gunzip {output}.gz'
 
