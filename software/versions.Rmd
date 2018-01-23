@@ -1,0 +1,19 @@
+---
+  title: "software versions"
+  output:
+    html_document:
+      fig_height: 12
+      fig_width: 10
+---
+
+
+```{r}
+.libPaths(c("~/R_library", .libPaths()))
+suppressMessages(suppressPackageStartupMessages(
+  source('../geuvadis/R/benchmark_methods.R')
+))
+```
+
+```{r}
+sessionInfo()
+```
