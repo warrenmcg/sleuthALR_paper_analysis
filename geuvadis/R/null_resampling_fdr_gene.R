@@ -59,6 +59,7 @@ storage.mode(dummy_filter) <- 'logical'
 
 all_training <- list()
 
+message('running sleuth ', Sys.time())
 sleuth_training <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -67,6 +68,7 @@ sleuth_training <- mclapply(seq_along(training_sets),
   })
 all_training$sleuth <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 
+message('running sleuth-ALR ', Sys.time())
 denom <- "ENSG00000116350.16"
 alr_training <- mclapply(seq_along(training_sets),
   function(i) {
@@ -76,6 +78,7 @@ alr_training <- mclapply(seq_along(training_sets),
   })
 all_training$`sleuth-ALR` <- lapply(alr_training, '[[', 'sleuthALR.lrt')
 
+message('running ALDEx2 ', Sys.time())
 all_training$ALDEx2 <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -83,6 +86,7 @@ all_training$ALDEx2 <- mclapply(seq_along(training_sets),
     aldex2_filter_and_run(obs, denom = 'iqlr', training, dummy_filter, "wilcoxon")$result
   })
 
+message('running DESeq2 ', Sys.time())
 all_training$DESeq2 <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -90,6 +94,7 @@ all_training$DESeq2 <- mclapply(seq_along(training_sets),
     DESeq2_filter_and_run_intersect(obs, training, dummy_filter)$result
   })
 
+message('running edgeR ', Sys.time())
 edgeR_training <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -108,6 +113,7 @@ edgeR_filter_training <- lapply(edgeR_filter_training,
     y
   })
 
+message('running limma ', Sys.time())
 all_training$voom <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -120,6 +126,7 @@ oracle <- data.frame(target_id = names(dummy_filter), is_de = FALSE,
   log_fc = NA, stringsAsFactors = FALSE)
 oracle <- lapply(1:length(sleuth_training), function(i) oracle)
 
+message('doing benchmarks ', Sys.time())
 self_benchmark <- lapply(seq_along(all_training),
   function(i) {
     method <- names(all_training)[[i]]
