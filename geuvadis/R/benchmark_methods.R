@@ -8,6 +8,7 @@ library("DESeq2")
 library("edgeR")
 library("limma")
 library("sleuth")
+library("sleuthALR")
 library("ALDEx2")
 
 get_human_gene_names <- function() {
@@ -469,6 +470,26 @@ run_sleuth_prep <- function(sample_info, max_bootstrap = 30, gene_column = NULL,
   so <- sleuth_fit(so)
 
   so
+}
+
+# new method to run sleuthALR
+run_alr <- function(sample_info,
+  max_bootstrap = 30,
+  gene_column = NULL,
+  denom = NULL,
+  ...) {
+  so <- sleuthALR::make_lr_sleuth_object(sample_info,
+    target_mapping = transcript_gene_mapping,
+    beta = 'conditionB',
+    denom_name = denom, aggregate_column = gene_column,
+    max_bootstrap = 30,
+    ...)
+  lrt <- sleuth_results(so, 'reduced:full', test_type = 'lrt',
+    show_all = FALSE)[, c('target_id', 'pval', 'qval')]
+  wt <- sleuth_results(so, 'conditionB',
+    show_all = FALSE)[, c('target_id', 'pval', 'qval')]
+  res <- list(sleuthALR.lrt = lrt, sleuthALR.wt = wt)
+  res
 }
 
 #' @param gene_mode if NULL, do isoform mode, if 'lift' do gene lifting, if 'aggregate', do gene aggregation
