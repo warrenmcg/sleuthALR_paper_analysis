@@ -12,6 +12,7 @@
 Take a look at `null_resampling_fdr_isoform.R` to see how this data is generated.
 
 ```{r}
+.libPaths(c("~/R_library", .libPaths()))
 suppressMessages({
 library('ggplot2')
 library('mamabear')

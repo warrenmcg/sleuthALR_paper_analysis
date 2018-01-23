@@ -1,3 +1,4 @@
+.libPaths(c("~/R_library", .libPaths()))
 args <- commandArgs(trailing = TRUE)
 
 # geuvadis_base <- '../results/finn_samples'

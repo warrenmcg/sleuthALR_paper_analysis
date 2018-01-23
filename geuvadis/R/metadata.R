@@ -1,3 +1,4 @@
+.libPaths(c("~/R_library", .libPaths()))
 library("dplyr")
 
 # This is information from the 1000 genomes website:
