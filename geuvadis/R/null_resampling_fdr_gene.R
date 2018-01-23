@@ -1,14 +1,11 @@
 .libPaths(c("~/R_library", .libPaths()))
 args <- commandArgs(trailing = TRUE)
 
-# geuvadis_base <- '../results/finn_samples'
-
 if (length(args) != 1) {
   stop('Must supply only 1 argument (the number of cores).')
 }
 
-cores <- 20
-
+#cores <- 20
 cores <- args[1]
 
 source('benchmark_methods.R')
@@ -24,10 +21,9 @@ transcript_gene_mapping <- get_human_gene_names()
 
 sample_info <- readRDS('../results/finn_subsamples.rds')
 
-gene_names <- unique(transcript_gene_mapping$ens_gene)
-gene_names <- gene_names[!is.na(gene_names)]
 # restrict to only the genes that are in the ensembl database
 gene_names <- unique(transcript_gene_mapping$ens_gene)
+gene_names <- gene_names[!is.na(gene_names)]
 
 dummy_filter <- rep(TRUE, length(gene_names))
 names(dummy_filter) <- gene_names
@@ -71,13 +67,6 @@ sleuth_training <- mclapply(seq_along(training_sets),
   })
 all_training$sleuth <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 
-all_training$DESeq <- mclapply(seq_along(training_sets),
-  function(i) {
-    training <- training_sets[[i]]
-    obs <- training_counts[[i]]
-    DESeq_filter_and_run(obs, training, dummy_filter)$result
-  })
-
 all_training$DESeq2 <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -109,14 +98,6 @@ all_training$voom <- mclapply(seq_along(training_sets),
     obs <- training_counts[[i]]
     current_filter <- edgeR_filter_training[[i]]
     limma_filter_and_run(obs, training, current_filter)$result
-  })
-
-all_training$EBSeq <- mclapply(seq_along(training_sets),
-  function(i) {
-    training <- training_sets[[i]]
-    obs <- training_counts[[i]]
-    current_filter <- edgeR_filter_training[[i]]
-    EBSeq_gene_filter_and_run(obs, training, current_filter)$result
   })
 
 oracle <- data.frame(target_id = names(dummy_filter), is_de = FALSE,
