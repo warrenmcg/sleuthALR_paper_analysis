@@ -117,3 +117,40 @@ load_union_counts_general <- function(file_paths, sample_names) {
 
   counts_table
 }
+
+readKalTpms <- function(path) {
+  suppressWarnings( result <- data.table::fread(path, data.table = TRUE) )
+
+  # pull out the columns 'target_id' and 'tpm'
+  result <- result[, c(1, 5), with = FALSE]
+  data.table::setnames(result, c('target_id', 'tpm'))
+
+  result
+}
+
+load_union_tpms_general <- function(file_paths, sample_names, ttg) {
+  ttg <- data.table::as.data.table(ttg)
+
+  all_tpms <- lapply(seq_along(file_paths),
+    function(i) {
+      tpms <- readKalTpms(file_paths[i])
+      tpms$sample <- sample_names[i]
+      tmp <- merge(tpms, ttg, by.x = "target_id", by.y = "target_id_backup")
+      tpm_gene <- tmp[, j = list(tpm = sum(tpm)),
+                      by = list(ens_gene)]
+      data.table::setnames(tpm_gene, c('gene_id', sample_names[i]))
+      tpm_gene
+    })
+  tpm_table <- Reduce(
+    function(x, y) dplyr::inner_join(x, y, by = 'gene_id'),
+    all_tpms
+    )
+
+  tpm_table <- data.frame(tpm_table, stringsAsFactors = FALSE)
+  rownames(tpm_table) <- tpm_table$gene_id
+  tpm_table$gene_id <- NULL
+
+  tpm_table <- as.matrix(tpm_table)
+
+  tpm_table
+}
