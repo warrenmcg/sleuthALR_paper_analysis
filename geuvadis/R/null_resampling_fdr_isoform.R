@@ -23,6 +23,7 @@ transcript_gene_mapping <- get_human_gene_names()
 
 sample_info <- readRDS('../results/finn_subsamples.rds')
 
+message(paste('running sleuth', Sys.time()))
 sleuth_training <- mclapply(sample_info,
   function(training) {
     sir <- run_sleuth(training, gene_mode = NULL)
@@ -62,6 +63,7 @@ all_training <- list()
 all_training$sleuth.lrt <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 all_training$sleuth.wt <- lapply(sleuth_training, '[[', 'sleuth.wt')
 
+message(paste('running sleuth-ALR', Sys.time()))
 denom <- "ENST00000373795.6" # this had lowest COV for all of the null samples
 sleuth_alr_training <- mclapply(seq_along(sample_info),
   function(i) {
@@ -72,6 +74,7 @@ sleuth_alr_training <- mclapply(seq_along(sample_info),
 all_training$sleuthALR.lrt <- lapply(alr_training, '[[', 'sleuthALR.lrt')
 all_training$sleuthALR.wt <- lapply(alr_training, '[[', 'sleuthALR.wt')
 
+message(paste("running ALDEx2 on training sets", Sys.time()))
 all_training$ALDEx2 <- mclapply(seq_along(sample_info),
   function(i) {
     training <- sample_info[[i]]
@@ -79,6 +82,7 @@ all_training$ALDEx2 <- mclapply(seq_along(sample_info),
     aldex2_filter_and_run(obs, denom = 'iqlr', training, dummy_filter, "wilcoxon")$result
   })
 
+message(paste('running DESeq2', Sys.time()))
 all_training$DESeq2 <- mclapply(seq_along(sample_info),
   function(i) {
     training <- sample_info[[i]]
@@ -86,6 +90,7 @@ all_training$DESeq2 <- mclapply(seq_along(sample_info),
     DESeq2_filter_and_run_intersect(obs, training, dummy_filter)$result
   })
 
+message(paste('running edgeR', Sys.time()))
 all_training$edgeR <- mclapply(seq_along(sample_info),
   function(i) {
     training <- sample_info[[i]]
@@ -94,6 +99,7 @@ all_training$edgeR <- mclapply(seq_along(sample_info),
   })
 
 # use the sleuth filter since limma doesn't have a recommended filter
+message(paste('running limma', Sys.time()))
 all_training$limmaVoom <- mclapply(seq_along(sample_info),
   function(i) {
     training <- sample_info[[i]]
@@ -113,6 +119,7 @@ all_training$sleuthALR.lrt <- NULL
 all_training$sleuthALR.wt <- NULL
 all_training$limmaVoom <- NULL
 
+message(paste('doing benchmark', Sys.time()))
 self_benchmark <- lapply(seq_along(all_training),
   function(i) {
     method <- names(all_training)[[i]]
