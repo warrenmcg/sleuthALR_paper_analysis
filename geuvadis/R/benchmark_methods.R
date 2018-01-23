@@ -8,6 +8,7 @@ library("DESeq2")
 library("edgeR")
 library("limma")
 library("sleuth")
+library("ALDEx2")
 
 get_human_gene_names <- function() {
   mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
@@ -337,6 +338,15 @@ limma_filter_and_run <- function(counts, stc, match_filter) {
   list(result = res, filter = match_filter)
 }
 
+# NEW METHOD FOR ALDEx2
+aldex2_filter_and_run <- function(counts, denom, stc, match_filter, which_test) {
+  which_targets <- sleuth_filter(counts)
+  match_filter <- match_filter & which_targets
+  res <- runALDEx2(counts, stc$condition, denom = denom, FALSE, "t", which_test)
+  match_filter <- names(which(match_filter))
+  list(result = res, filter = match_filter)
+}
+
 # DEPRECATED
 # DESeq2_filter_and_run <- function(count_matrix, stc, sleuth_filter) {
 #   # we should check if taking the intersection of results does better
@@ -543,6 +553,63 @@ rename_target_id <- function(df, as_gene = FALSE) {
     dplyr::rename(df, ens_gene = target_id)
   } else {
     df
+  }
+}
+
+## NEW METHOD: Run ALDEx2
+runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, test = "t", statistic = "welsh") {
+  mode(counts) <- "integer"
+  counts_mat <- as.data.frame(counts)
+  x <- ALDEx2::aldex.clr(reads = counts_mat, conds = conditions, mc.samples = 128, denom = denom,
+                 verbose = TRUE)
+  if (test == "t") {
+    message('aldex.ttest: doing t-test')
+    x_tt <- ALDEx2::aldex.ttest(x, conditions, paired.test = FALSE)
+  } else if (test == "glm") {
+    message('aldex.glm: doing Kruskal Wallace and glm test')
+    x_tt <- ALDEx2::aldex.glm(x, conditions)
+  }
+  message('aldex.effect: calculating effect sizes')
+  x_effect <- ALDEx2::aldex.effect(x, conditions, include.sample.summary = TRUE,
+                                   verbose = TRUE)#, useMC = TRUE)
+  result_df <- data.frame(x_effect, x_tt)
+  result_df <- result_df[order(result_df$we.eBH, result_df$we.ep, result_df$overlap), ]
+  statistic <- match.arg(statistic, c("welsh", "wilcoxon", "overlap"))
+  if (statistic == "welsh") {
+    rename_target_id(
+      data.frame(target_id = rownames(result_df),
+        dplyr::select(result_df, pval = we.ep,
+          qval = we.eBH,
+          nonpara_pval = wi.ep,
+          nonpara_qval = wi.eBH,
+          overlap = overlap,
+          effect = effect),
+        stringsAsFactors = FALSE),
+      as_gene = as_gene)
+  } else if (statistic == "wilcoxon") {
+    rename_target_id(
+      data.frame(target_id = rownames(result_df),
+        dplyr::select(result_df, pval = wi.ep,
+          qval = wi.eBH,
+          para_pval = we.ep,
+          para_qval = we.eBH,
+          overlap = overlap,
+          effect = effect),
+        stringsAsFactors = FALSE),
+      as_gene = as_gene)
+  } else {
+    result <- rename_target_id(
+      data.frame(target_id = rownames(result_df),
+        dplyr::select(result_df, qval = overlap,
+          para_pval = we.ep,
+          para_qval = we.eBH,
+          nonpara_pval = wi.ep,
+          nonpara_qval = wi.eBH,
+          effect = effect),
+        stringsAsFactors = FALSE),
+      as_gene = as_gene)
+    result$pval <- result_df$overlap
+    result
   }
 }
 
