@@ -62,6 +62,23 @@ all_training <- list()
 all_training$sleuth.lrt <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 all_training$sleuth.wt <- lapply(sleuth_training, '[[', 'sleuth.wt')
 
+denom <- "ENST00000373795.6" # this had lowest COV for all of the null samples
+sleuth_alr_training <- mclapply(seq_along(sample_info),
+  function(i) {
+    training <- sample_info[[i]]
+    alr <- run_alr(training, denom = denom, num_cores = 1)
+    list(sleuthALR.wt = alr$sleuthALR.wt, sleuthALR.lrt = alr$sleuthALR.lrt)
+  })
+all_training$sleuthALR.lrt <- lapply(alr_training, '[[', 'sleuthALR.lrt')
+all_training$sleuthALR.wt <- lapply(alr_training, '[[', 'sleuthALR.wt')
+
+all_training$ALDEx2 <- mclapply(seq_along(sample_info),
+  function(i) {
+    training <- sample_info[[i]]
+    obs <- obs_raw[[i]]
+    aldex2_filter_and_run(obs, denom = 'iqlr', training, dummy_filter, "wilcoxon")$result
+  })
+
 all_training$DESeq2 <- mclapply(seq_along(sample_info),
   function(i) {
     training <- sample_info[[i]]
@@ -87,10 +104,13 @@ all_training$limmaVoom <- mclapply(seq_along(sample_info),
 
 # do some renaming
 all_training$sleuth <- all_training$sleuth.lrt
+all_training$`sleuth-ALR` <- all_training$sleuthALR.lrt
 all_training$voom <- all_training$limmaVoom
 
 all_training$sleuth.lrt <- NULL
 all_training$sleuth.wt <- NULL
+all_training$sleuthALR.lrt <- NULL
+all_training$sleuthALR.wt <- NULL
 all_training$limmaVoom <- NULL
 
 self_benchmark <- lapply(seq_along(all_training),
