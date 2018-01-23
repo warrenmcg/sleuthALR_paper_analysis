@@ -3,15 +3,10 @@ include: '../config.py'
 rule all:
     input:
         KALLISTO,
-        RSEM_SIMULATE,
         HISAT,
-        CUFFLINKS,
         SAMTOOLS,
         FEATURE_COUNTS,
         SEQTK,
-        BOWTIE,
-
-        BitSeq_parseAlignment,
 
         'versions.html'
 
@@ -35,21 +30,6 @@ rule get_kallisto:
         ' && '
         'rm -rf {params.tmp} kallisto*'
 
-rule get_cufflinks:
-    output:
-        CUFFLINKS
-    params:
-        url = 'http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-2.2.1.Linux_x86_64.tar.gz',
-        tmp = 'cufflinks'
-    shell:
-        'wget -O {params.tmp}.tar.gz {params.url}'
-        ' && '
-        'tar -xf {params.tmp}.tar.gz'
-        ' && '
-        'find {params.tmp}-* -perm /111 -type f -exec cp {{}} bin \;'
-        ' && '
-        'rm -rf {params.tmp}*'
-
 rule get_samtools:
     output:
         SAMTOOLS
@@ -66,42 +46,6 @@ rule get_samtools:
         'make prefix=.. install'
         ' && '
         'rm -rf {params.tmp}*'
-
-rule get_rsem_simulate:
-    output:
-        RSEM_SIMULATE
-    params:
-        url = 'https://github.com/pimentel/RSEM',
-        tmp = 'rsem_simulate_tmp'
-    shell:
-        'git clone --branch simulate-counts --depth 1 {params.url} {params.tmp};'
-        ' cd {params.tmp};'
-        ' make;'
-        ' cd ..;'
-        # 'find {params.tmp} -maxdepth 1 -perm +o+x -type f -exec cp {{}} bin \;'
-        'find {params.tmp} -maxdepth 1 -perm /111 -type f -exec cp {{}} bin \;'
-        ' && '
-        'find {params.tmp} -maxdepth 1 -type f -name "*.pm" -exec cp {{}} bin \;'
-        ' && '
-        ' rm -rf {params.tmp}'
-
-rule get_bowtie:
-    output:
-        BOWTIE
-    params:
-        url = 'https://github.com/BenLangmead/bowtie/archive/v1.1.2.tar.gz',
-        tmp = 'bowtie_temporary'
-    shell:
-        'wget -O {params.tmp}.tar.gz {params.url}'
-        ' && '
-        'tar -xf {params.tmp}.tar.gz'
-        ' && '
-        'cd bowtie-1.1.2'
-        ' && '
-        'make prefix=.. install'
-        ' && '
-        'rm -rf bowtie*'
-
 
 
 rule get_hisat:
@@ -143,24 +87,6 @@ rule get_seqtk:
         'git clone {params.url} {params.tmp};'
         ' git reset --hard {params.branch};'
         # 'git clone --branch {params.branch} --depth 1 {params.url} {params.tmp};'
-        ' cd {params.tmp};'
-        ' make;'
-        ' cd ..;'
-        # 'find {params.tmp} -maxdepth 1 -perm +o+x -type f -exec cp {{}} bin \;'
-        ' find {params.tmp} -maxdepth 1 -perm /111 -type f -exec cp {{}} bin \;'
-        ' && '
-        ' rm -rf {params.tmp}'
-
-rule get_BitSeq:
-    output:
-        BitSeq_parseAlignment
-    params:
-        url = 'https://github.com/BitSeq/BitSeq.git',
-        tmp = 'BitSeq',
-        branch = '72fe9d9408467ac55fcbc717472e45ec71626b45'
-    shell:
-        'git clone {params.url} {params.tmp};'
-        ' git reset --hard {params.branch};'
         ' cd {params.tmp};'
         ' make;'
         ' cd ..;'
