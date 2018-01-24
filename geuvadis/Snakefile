@@ -2,17 +2,43 @@ include: '../config.py'
 
 from os.path import isfile
 
+rule init:
+    output:
+        'metadata/geu_meta.RData',
+        'metadata/accession.txt',
+        'metadata/finn_samples.txt'
+    shell:
+        source_r('R', 'metadata.R')
+
 # TODO: put this at the beginning of the pipeline (run it before everything)
+ACCESSION_FILE = 'metadata/accession.txt'
+ERA_SINGLE = []
+if isfile(ACCESSION_FILE):
+    ERA_SINGLE = get_sample_ids(ACCESSION_FILE)
+else:
+    # force running the init
+    print('Warning: the accession file is missing or the init script has not yet been run. Running now.')
+    rule:
+        input: rules.init.output
+
+SAMPLES_FILE = 'metadata/finn_samples.txt'
 FINN_SAMPLES = []
-with open('finn_samples.txt', 'r') as input:
-    for line in input:
-        FINN_SAMPLES.append(line.strip())
+if isfile(SAMPLES_FILE):
+    with open('metadata/finn_samples.txt', 'r') as input:
+        for line in input:
+            FINN_SAMPLES.append(line.strip())
+else:
+    # force running the init
+    print('Warning: the finn_samples.txt file is missing or init script has not yet been run. Running now.')
+    rule:
+        input: rules.init.output
 
 rule all:
     input:
         # get all the metadata we need from geuvadis
         'metadata/geu_meta.RData',
-        'results/prep_fin.RData',
+        'results/finn_subsamples.rds',
+        expand('finn_samples/{id}/{id}_{i}.fastq.gz', id = FINN_SAMPLES, i = [1, 2]),
 
         # used for null experiment
         expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES),
@@ -25,23 +51,23 @@ rule all:
         'results/simulation/gene_benchmarks.rds',
         'results/simulation/benchmark_report.html'
 
-rule geuvadis_metadata:
-    output:
-        'metadata/geu_meta.RData'
-    shell:
-        source_r('R', 'metadata.R')
-
-rule prep_finnish_samples:
-    input:
-        'metadata/geu_meta.RData'
-    output:
-        'results/prep_fin.RData'
-    shell:
-        source_r('R', 'mean_disp_pairs.R')
-
 def finn_sample_input(wildcards):
     id = wildcards['id']
     return expand('finn_samples/{id}/{id}_{i}.fastq.gz', id = id, i = [1, 2])
+
+rule fastq_dump:
+    input:
+        ERA_SINGLE
+    output:
+        'finn_samples/{id,[A-Z]+[0-9]+}',
+        finn_sample_input
+    threads: 1
+    shell:
+        'mkdir finn_samples/{wildcards.id} && '
+        ' wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR188/{input[0]}/{input[0]}_1.fastq.gz && '
+        ' wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR188/{input[0]}/{input[0]}_2.fastq.gz && '
+        ' rename \'s/{input[0]}/{wildcards.id}/\' {input[0]}_*fasta.gz && '
+        ' mv {output[1]} {output[2]} {output[0]}'
 
 rule finn_samples:
     input:
@@ -57,6 +83,15 @@ rule finn_samples:
         ' -o {output[0]}'
         ' -t {threads}'
         ' {input[0]} {input[1]}'
+
+rule prep_null_resampling:
+    input:
+        'metadata/geu_meta.RData',
+        'results/finn_samples/{id}/abundance.h5'
+    output:
+        'results/finn_subsamples.rds'
+    shell:
+        source_r('R', 'resampling_fdr.R')
 
 rule finn_hisat_alignment:
     input:
