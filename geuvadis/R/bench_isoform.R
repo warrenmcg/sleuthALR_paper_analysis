@@ -1,3 +1,4 @@
+.libPaths(c("~/R_library", .libPaths()))
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) != 2) {
@@ -22,10 +23,6 @@ options(mc.cores = n_cpu)
 
 transcript_gene_mapping <- get_human_gene_names()
 
-# put the isoform information for EBSeq in global variables
-NG_LIST <- GetNg(transcript_gene_mapping$target_id,
-  transcript_gene_mapping$ens_gene)
-
 ###
 # new refactoring
 ###
@@ -37,12 +34,6 @@ all_results$limmaVoom <- mclapply(1:20,
     cat('Sample: ', i, '\n')
     load_isoform_results_intersect(sim_name, i, 'limmaVoom',
       limma_filter_and_run)
-  }, mc.cores = n_cpu)
-
-all_results$DESeq <- mclapply(1:20,
-  function(i) {
-    cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'DESeq', DESeq_filter_and_run)
   }, mc.cores = n_cpu)
 
 all_results$DESeq2 <- mclapply(1:20,
@@ -57,20 +48,6 @@ all_results$edgeR <- mclapply(1:20,
     cat('Sample: ', i, '\n')
     load_isoform_results_intersect(sim_name, i, 'edgeR',
       edgeR_filter_and_run)
-  }, mc.cores = n_cpu)
-
-all_results$EBSeq <- mclapply(1:20,
-  function(i) {
-    cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'EBSeq',
-      EBSeq_isoform_filter_and_run)
-  }, mc.cores = n_cpu)
-
-all_results$Cuffdiff2 <- mclapply(1:20,
-  function(i) {
-    cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'Cuffdiff2',
-      cuffdiff_filter_and_run)
   }, mc.cores = n_cpu)
 
 all_benchmarks <- lapply(all_results,
