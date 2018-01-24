@@ -43,6 +43,12 @@ BOWTIE = BIN + '/bowtie'
 # print(type(os.environ['PATH']))
 
 ###
+# simulation wildcards
+###
+SIM_NAMES = ['run' + format(i, '02d') for i in range(1,16)]
+SIM_IDS = ['sample' + format(i, '02d') for i in range(1,11)]
+
+###
 # annotations
 ###
 TRANSCRIPTOME_NAME = 'Homo_sapiens.gencode.v25'
