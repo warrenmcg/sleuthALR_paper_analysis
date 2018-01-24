@@ -13,6 +13,7 @@ if (!file.exists('r_pkg_install_success.txt')) {
 
   devtools::install_github('pachterlab/sleuth')
   devtools::install_github('pimentel/mamabear')
+  devtools::install_github('COMBINE-lab/wasabi')
   devtools::install_github('warrenmcg/sleuthALR')
   devtools::install_github('warrenmcg/absSimSeq')
 
