@@ -14,4 +14,4 @@ prepare_salmon <- function(in_dir=NULL, pattern=NULL) {
   wasabi::prepare_fish_for_sleuth(salmon_dirs)
 }
 
-prepare_salmon(in_dir = args[1], pattern = "sample")
+prepare_salmon(in_dir = file.path(c("sims", args[1], args[2]), pattern = "sample")
