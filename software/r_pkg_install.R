@@ -9,7 +9,7 @@ if (!file.exists('r_pkg_install_success.txt')) {
 
   source("https://bioconductor.org/biocLite.R")
   biocLite()
-  biocLite(c('DESeq2', 'limma', 'ALDEx2'))
+  biocLite(c('DESeq2', 'limma', 'ALDEx2', 'SRAdb'))
 
   devtools::install_github('pachterlab/sleuth')
   devtools::install_github('pimentel/mamabear')
