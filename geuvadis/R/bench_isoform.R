@@ -8,7 +8,7 @@ if (length(args) != 2) {
 # temporary for debugging
 # n_cpu <- 20
 # sim_name <- 'isoform_3_3_20_1_1'
-sim_name <- 'gfr_3_3_20_42_2'
+sim_name <- 'isoform_5_5_15_387_1'
 
 n_cpu <- args[1]
 sim_name <- args[2]
@@ -27,30 +27,39 @@ transcript_gene_mapping <- get_human_gene_names()
 # new refactoring
 ###
 
-all_results <- list()
+all_results_sal <- list()
 
-all_results$limmaVoom <- mclapply(1:20,
+N_SIM <- 15
+### TO-DO: add sleuth
+### TO-DO: add sleuth-ALR
+### TO-DO: add ALDEx2
+
+message(paste('running limma', Sys.time()))
+all_results_sal$limmaVoom <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'limmaVoom',
-      limma_filter_and_run)
+    load_isoform_results_intersect(sim_name, i, 'salmon',
+      'limmaVoom', limma_filter_and_run)$limmaVoom
   }, mc.cores = n_cpu)
 
-all_results$DESeq2 <- mclapply(1:20,
+message(paste('running DESeq2', Sys.time()))
+all_results_sal$DESeq2 <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'DESeq2',
-      DESeq2_filter_and_run_intersect)
+    load_isoform_results_intersect(sim_name, i, 'salmon',
+      'DESeq2', DESeq2_filter_and_run_intersect)$DESeq2
   }, mc.cores = n_cpu)
 
-all_results$edgeR <- mclapply(1:20,
+message(paste('running edgeR', Sys.time()))
+all_results_sal$edgeR <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'edgeR',
-      edgeR_filter_and_run)
+    load_isoform_results_intersect(sim_name, i, 'salmon',
+       'edgeR', edgeR_filter_and_run)$edgeR
   }, mc.cores = n_cpu)
 
-all_benchmarks <- lapply(all_results,
+message(paste('getting benchmarks', Sys.time()))
+all_sal_benchmarks <- lapply(all_results_sal,
   function(result) {
     mclapply(seq_along(result),
       function(i) {
@@ -60,5 +69,6 @@ all_benchmarks <- lapply(all_results,
       }, mc.cores = n_cpu)
   })
 
+### TO-DO: Convert this to the separate benchmarks
 saveRDS(all_benchmarks, file = paste0('../results/', sim_name,
   '/isoform_benchmarks.rds'))
