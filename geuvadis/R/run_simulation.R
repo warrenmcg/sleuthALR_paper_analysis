@@ -2,8 +2,8 @@
 
 fasta_file <- '../../annotation/Homo_sapiens.gencode.v25.fa'
 sleuth_file <- '../results/finn_sleuth.rds'
-dir.create('../results/simulation', ignoreWarnings = T)
-outdir <- '../results/simulation'
+dir.create('../sims', ignoreWarnings = T)
+outdir <- '../sims'
 
 ### This denominator was chosen for two reasons:
 # 1) It is known to not be changing across all fifteen runs
