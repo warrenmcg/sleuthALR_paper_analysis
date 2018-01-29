@@ -47,13 +47,18 @@ rule all:
         'results/null_resampling_fdr_report.html',
 
         # do a large experiment so that we can do permutations
-        expand('sims/{exp}/{id}_{i}.fasta.gz', exp = SIM_NAMES, id = SIM_IDS, i = [1, 2]),
-        expand('results/sims/{exp}/kallisto/{id}/abundance.h5', exp = SIM_NAMES, id = SIM_IDS),
-        expand('results/sims/{exp}/salmon/{id}/abundance.h5', exp = SIM_NAMES, id = SIM_IDS),
-        'results/sims/no_change_benchmarks.rds',
-        'results/sims/down_benchmarks.rds',
-        'results/sims/up_benchmarks.rds',
-        'results/sims/benchmark_report.html'
+        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS, i = [1, 2]),
+        expand('sims/{sim}/{exp}/results/sleuth', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES),
+        expand('sims/{sim}/{exp}/{id}/kallisto/abundance.h5', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS),
+        expand('sims/{sim}/{exp}/{id}/salmon/abundance.h5', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS),
+        expand('results/{sim}/small_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/down_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/up_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/benchmark_report.html', sim = 'isoform_5_5_15_387_1')
 
 def finn_sample_input(wildcards):
     id = wildcards['id']
@@ -64,7 +69,8 @@ rule fastq_dump:
         ERA_SINGLE
     output:
         'finn_samples/{id,[A-Z]+[0-9]+}',
-        finn_sample_input
+        'finn_samples/{id}/{id}_1.fastq.gz',
+        'finn_samples/{id}/{id}_2.fastq.gz'
     threads: 1
     shell:
         'mkdir finn_samples/{wildcards.id} && '
@@ -91,7 +97,7 @@ rule finn_samples:
 rule prep_null_resampling:
     input:
         'metadata/geu_meta.RData',
-        'results/finn_samples/{id}/abundance.h5'
+        expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES)
     output:
         'results/finn_subsamples.rds'
     shell:
@@ -190,20 +196,20 @@ rule make_simulation:
         'results/finn_sleuth.rds'
     output:
         'results/polyester_ground_truth.RData',
-        expand('sims/{exp}/{id}_{i}.fasta.gz', exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
+        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
     shell:
         source_r('R', 'run_simulation.R')
 
 rule kallisto:
     input:
-        'sims/{exp}/{id}_1.fasta.gz',
-        'sims/{exp}/{id}_2.fasta.gz'
+        expand('sims/{sim}/{exp}/{id}/{id}_1.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS),
+        expand('sims/{sim}/{exp}/{id}/{id}_2.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS)
     output:
-        'sims/{exp}/kallisto/{id}/',
-        'sims/{exp}/kallisto/{id}/abundance.h5',
-        'sims/{exp}/kallisto/{id}/abundance.tsv'
-    benchmark:
-        'benchmark/{exp}/{id}/kallisto/benchmark.json'
+        'sims/{sim}/{exp}/{id}/kallisto',
+        'sims/{sim}/{exp}/{id}/kallisto/abundance.h5'
     threads: 5
     shell:
         '{UPDATED_PATH} '
@@ -218,13 +224,13 @@ rule kallisto:
 
 rule salmon:
     input:
-        'sims/{exp}/{id}_1.fasta.gz',
-        'sims/{exp}/{id}_2.fasta.gz'
+        expand('sims/{sim}/{exp}/{id}/{id}_1.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS),
+        expand('sims/{sim}/{exp}/{id}/{id}_2.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS)
     output:
-        'sims/{exp}/salmon/{id}/',
-        'sims/{exp}/salmon/{id}/quant.sf'
-    benchmark:
-        'benchmark/{exp}/{id}/salmon/benchmark.json'
+        'sims/{sim}/{exp}/{id}/salmon/',
+        'sims/{sim}/{exp}/{id}/salmon/quant.sf'
     threads: 5
     shell:
         '{UPDATED_PATH} '
@@ -241,37 +247,75 @@ rule salmon:
 
 rule prep_fish:
     input:
-        'sims/{exp}/salmon'
+        'sims/{sim}/{exp}/{id}/salmon/quant.sf'
     output:
-        'sims/{exp}/salmon/{id}/abundance.h5'
+        'sims/{sim}/{exp}/{id}/salmon/abundance.h5'
     shell:
-        source_r('R', 'prep_fish.R') ' {wildcards.exp}'
+        source_r('R', 'prep_fish.R') + ' {wildcards.sim} {wildcards.exp}'
 
-def get_isoform_dependencies(wildcards):
-    exp = wildcards['experiment']
+def get_simulation_info(experiment_string):
+    mode, a, b, n, seed, sf = experiment_string.split('_')
+    result = {
+        'mode': mode,
+        'a': int(a),
+        'b': int(b),
+        'n': int(n),
+        'seed': int(seed),
+        'sf': int(sf)
+    }
+    return result
+
+def get_sleuth(wildcards):
+    sim = wildcards['sim']
+    info = get_simulation_info(sim)
+    exp = wildcards['exp']
+    ids = ['sample_' + format(i, '02d') for i in range(1, info['a'] + info['b'] + 1)]
     ret = []
-    ret += expand('sims/{exp}/exp_{num}/results/sleuth', exp = exp,
-        num = range(1, N_SIM + 1))
+    ret += expand('sims/{sim}/{exp}/{id}/kallisto/abundance.h5',
+        sim = sim,
+        exp = exp,
+        id = ids)
     return ret
+
+rule sleuth:
+    input:
+        get_sleuth
+    output:
+        'sims/{sim}/{exp}/results/sleuth'
+    shell:
+        'touch {output}'
+
+N_SIM = 15
+def get_isoform_dependencies(wildcards):
+    sim = wildcards['sim']
+    nums = [format(i, '02d') for i in range(1, N_SIM + 1)]
+    ret = []
+    ret += expand('sims/{sim}/run{num}/results/sleuth', sim = sim,
+                  num = nums)
+    return ret
+
 rule benchmark_isoform:
     input:
         get_isoform_dependencies
     output:
-        'results/{experiment}/isoform_benchmarks.rds'
+        'results/{sim}/small_benchmarks.rds',
+        'results/{sim}/down_benchmarks.rds',
+        'results/{sim}/up_benchmarks.rds'
     threads:
         N_SIM
     shell:
-        source_r('R', 'bench_isoform.R') + ' {threads} {wildcards.experiment}'
+        source_r('R', 'bench_isoform.R') + ' {threads} {wildcards.sim}'
 
 rule benchmark_report:
     input:
-        'results/{experiment}/isoform_benchmarks.rds',
-        'results/{experiment}/gene_benchmarks.rds',
+        'results/{sim}/small_benchmarks.rds',
+        'results/{sim}/down_benchmarks.rds',
+        'results/{sim}/up_benchmarks.rds'
     output:
-        'results/{experiment}/benchmark_report.html',
+        'results/{sim}/benchmark_report.html',
     threads:
         1
     shell:
         source_rmd('R', 'benchmark_report.Rmd',
-            '../results/{wildcards.experiment}/benchmark_report.html') +
-        ' {threads} {wildcards.experiment}'
+            '../results/{wildcards.sim}/benchmark_report.html') +
+        ' {threads} {wildcards.sim}'
