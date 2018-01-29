@@ -137,8 +137,7 @@ load_isoform_results_intersect <- function(
 
   method_result <- method_fit_function(obs_raw, sample_to_condition,
     s_which_filter)
-  sir <- run_sleuth(sample_to_condition, gene_mode = NULL,
-    filter_target_id = method_result$filter)
+  sir <- run_sleuth(sample_to_condition, gene_mode = NULL)
 
   all_results <- Filter(is.data.frame, sir)
 
@@ -179,8 +178,7 @@ load_isoform_results_intersect_df <- function(
   message('### Running method: ', method_label)
   method_result <- method_fit_function(obs_raw, sample_to_condition,
     s_which_filter)
-  sir <- run_sleuth(sample_to_condition, gene_mode = NULL,
-    filter_target_id = method_result$filter)
+  sir <- run_sleuth(sample_to_condition, gene_mode = NULL)
 
   all_results <- Filter(is.data.frame, sir)
 
@@ -247,7 +245,7 @@ load_gene_results_intersect <- function(
 
   message('### running gene aggregation')
   sar <- run_sleuth(sample_to_condition, gene_mode = 'aggregate',
-    filter_target_id = method_result$filter, gene_column = 'ens_gene')
+    gene_column = 'ens_gene')
 
   # TODO: adjust the fdr based off of the filtering scheme
   # e.g. take the intersection of the tests and recompute the fdr
@@ -437,7 +435,6 @@ run_sleuth <- function(sample_info,
   max_bootstrap = 30,
   gene_mode = NULL,
   gene_column = NULL,
-  filter_target_id = NULL,
   ...) {
 
   so <- NULL
