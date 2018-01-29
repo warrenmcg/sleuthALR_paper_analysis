@@ -108,42 +108,59 @@ compare_reference <- function(results_list, de_info,
 load_isoform_results_intersect <- function(
   sim_name,
   which_sample,
+  tool,
   method_label,
   method_fit_function,
   ...) {
   sim <- parse_simulation(sim_name)
 
+  tool <- match.arg(tool, c("kallisto", "salmon"))
   if (which_sample > sim$n) {
     stop('which_sample must be less than the total number of replications: ', sim$n)
   }
 
-  which_sample <- as.integer(which_sample)
+  which_sample <- sprintf('%02d', which_sample)
   n <- sim$a + sim$b
 
-  sim_info <- get_de_info(sim_name, which_sample, transcript_gene_mapping)
-  de_info <- sim_info$de_info
-  de_genes <- sim_info$de_genes
-
-  kal_dirs <- file.path('..', 'sims', sim_name, paste0("exp_", which_sample),
-    1:n, "kallisto")
+  kal_dirs <- file.path('..', 'sims', sim_name, paste0("run", which_sample),
+    paste0("sample_", sprintf('%02d', 1:n)), tool)
   sample_to_condition <- get_sample_to_condition(sim$a, sim$b, kal_dirs)
 
-  # simply do this so we can read in the data
-  so_data <- sleuth_prep(sample_to_condition, ~1, max_bootstrap = 3)
-  obs_raw <- sleuth:::spread_abundance_by(so_data$obs_raw, "est_counts")
-  rm(so_data)
+  if (method_label == 'sleuth') {
+    sir <- run_sleuth(sample_to_condition, gene_mode = NULL, ...)
+    all_results <- list(sleuth.lrt = sir$sleuth.lrt, sleuth.wt = sir$sleuth.wt)
+    all_results
+  } else if (method_label == 'sleuthALR') {
+    all_results <- run_alr(sample_to_condition, gene_mode = NULL, ...)
+    all_results
+  } else if (method_label == 'ALDEx2') {
+    # simply do this so we can read in the data
+    so_data <- sleuth_prep(sample_to_condition, ~1, max_bootstrap = 2)
+    obs_raw <- sleuth:::spread_abundance_by(so_data$obs_raw, "est_counts")
+    rm(so_data)
 
-  s_which_filter <- sleuth_filter(obs_raw, ...)
+    s_which_filter <- sleuth_filter(obs_raw)
 
-  method_result <- method_fit_function(obs_raw, sample_to_condition,
-    s_which_filter)
-  sir <- run_sleuth(sample_to_condition, gene_mode = NULL)
+    res <- runALDEx2(obs_raw, stc = sample_to_condition, match_filter = s_which_filter,
+                     which_test = 'all', ...)
+    all_results <- list(ALDEx2.overlap = res$overlap, ALDEx2.welsh = res$welsh,
+                        ALDEx2.wilcoxon = res$wilcoxon)
+    all_results
+  } else {
+    # simply do this so we can read in the data
+    so_data <- sleuth_prep(sample_to_condition, ~1, max_bootstrap = 2)
+    obs_raw <- sleuth:::spread_abundance_by(so_data$obs_raw, "est_counts")
+    rm(so_data)
 
-  all_results <- Filter(is.data.frame, sir)
+    s_which_filter <- sleuth_filter(obs_raw, ...)
 
-  all_results[[method_label]] <- method_result$result
+    method_result <- method_fit_function(obs_raw, sample_to_condition,
+      s_which_filter)
 
-  all_results
+    all_results[[method_label]] <- method_result$result
+
+    all_results
+  }
 }
 
 ###
@@ -373,7 +390,7 @@ get_sample_to_condition <- function(n_a, n_b, kal_dirs = NULL) {
   n <- n_a + n_b
 
   sample_to_condition <- data.frame(
-    sample = paste0("sample_", 1:n),
+    sample = paste0("sample_", sprintf('%02d', 1:n)),
     condition = factor(c(rep("A", n_a), rep("B", n_b))),
     stringsAsFactors = FALSE)
 
