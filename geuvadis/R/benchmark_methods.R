@@ -105,66 +105,6 @@ compare_reference <- function(results_list, de_info,
 #' Otherwise, use the filtering provided from sleuth.
 #' @param ... additional arguments passed to \code{run_sleuth}
 #' NOTE: cuffdiff uses a filter method internally and it cannot be changed
-load_isoform_results <- function(
-  sim_name,
-  which_sample,
-  method_filtering = FALSE,
-  ...) {
-  sim <- parse_simulation(sim_name)
-
-  if (which_sample > sim$n) {
-    stop('which_sample must be less than the total number of replications: ', sim$n)
-  }
-
-  which_sample <- as.integer(which_sample)
-  n <- sim$a + sim$b
-
-  sim_info <- get_de_info(sim_name, which_sample, transcript_gene_mapping)
-  de_info <- sim_info$de_info
-  de_genes <- sim_info$de_genes
-
-  kal_dirs <- file.path('..', 'sims', sim_name, paste0("exp_", which_sample),
-    1:n, "kallisto")
-  sample_to_condition <- get_sample_to_condition(sim$a, sim$b, kal_dirs)
-
-  sir <- run_sleuth(sample_to_condition, gene_mode = NULL, ...)
-
-  isoform_cds <- get_filtered_isoform_cds(sir$so, sample_to_condition,
-    method_filtering)
-  # sir$so <- NULL
-
-  gene_methods <- list(
-    # DESeq2 = runDESeq2,
-    # edgeR = runEdgeR,
-    limmaVoom = runVoom
-    # edgerRobust = runEdgeRRobust,
-    # EBSeq = runEBSeq
-    )
-  isoform_results <- lapply(gene_methods,
-    function(f) {
-      f(isoform_cds, FALSE, method_filtering)
-    })
-  all_results <- c(Filter(is.data.frame, sir) , isoform_results)
-
-  # TODO: adjust the fdr based off of the filtering scheme
-  # e.g. take the intersection of the tests and recompute the fdr
-  # This ensures that the calibration tests can be comparable
-
-  # cr <- get_cuffdiff(
-  #   file.path('..', 'sims', sim_name, paste0("exp_", which_sample),
-  #     'results', 'cuffdiff')
-  #   )[['isoform']]
-  # all_results <- c(all_results, list(Cuffdiff2 = cr))
-
-  all_results
-}
-
-#' @param sim_name a simulation name such as 'isoform_3_3_20_1_1'
-#' @param which_sample which sample (replication) to load (an integer from 1 to N)
-#' @param method_filtering if \code{TRUE}, use the methods own filtering.
-#' Otherwise, use the filtering provided from sleuth.
-#' @param ... additional arguments passed to \code{run_sleuth}
-#' NOTE: cuffdiff uses a filter method internally and it cannot be changed
 load_isoform_results_intersect <- function(
   sim_name,
   which_sample,
