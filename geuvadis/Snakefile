@@ -5,13 +5,13 @@ from os.path import isfile
 rule init:
     output:
         'metadata/geu_meta.RData',
-        'metadata/accession.txt',
+        'metadata/accessions.txt',
         'metadata/finn_samples.txt'
     shell:
         source_r('R', 'metadata.R')
 
 # TODO: put this at the beginning of the pipeline (run it before everything)
-ACCESSION_FILE = 'metadata/accession.txt'
+ACCESSION_FILE = 'metadata/accessions.txt'
 ERA_SINGLE = []
 if isfile(ACCESSION_FILE):
     ERA_SINGLE = get_sample_ids(ACCESSION_FILE)
