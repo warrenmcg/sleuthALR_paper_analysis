@@ -95,15 +95,23 @@ all_results_sal$edgeR <- mclapply(1:N_SIM,
   }, mc.cores = n_cpu)
 
 message(paste('getting benchmarks', Sys.time()))
-all_sal_benchmarks <- lapply(all_results_sal,
-  function(result) {
+oracles <- readRDS('../sims/polyester_oracles.rds')
+all_sal_benchmarks <- lapply(seq_along(all_results_sal),
+  function(i) {
+    method_name <- names(all_results_sal)[i]
+    result <- all_results_sal[[i]]
     mclapply(seq_along(result),
-      function(i) {
-        x <- result[[i]]
-        sim_info <- get_de_info(sim_name, i, transcript_gene_mapping)
-        new_de_benchmark(x, names(x), sim_info$de_info)
+      function(j) {
+        x <- result[j]
+        if(grepl('sleuthALR', method_name) | grepl('ALDEx2', method_name)) {
+          oracle <- oracles$alr_oracle[[j]]
+        } else {
+          oracle <- oracles$main_oracle[[j]]
+        }
+        new_de_benchmark(x, method_name, oracle)
       }, mc.cores = n_cpu)
   })
+names(all_sal_benchmarks) <- names(all_results_sal)
 
 small_sal_benchmarks <- lapply(all_sal_benchmarks, function(x) x[1:GROUP_BREAKS[1]])
 down_sal_benchmarks <- lapply(all_sal_benchmarks, function(x) x[(GROUP_BREAKS[1]+1):(GROUP_BREAKS[2])])
