@@ -283,7 +283,14 @@ aldex2_filter_and_run <- function(counts, denom, stc, match_filter, which_test) 
   match_filter <- match_filter & which_targets
   res <- runALDEx2(counts, stc$condition, denom = denom, FALSE, "t", which_test)
   match_filter <- names(which(match_filter))
-  list(result = res, filter = match_filter)
+  if (which_test == "all") {
+    list(aldex2_overlap = res$overlap,
+         aldex2_welsh = res$welsh,
+         aldex2_wilcoxon = res$wilcoxon,
+         filter = match_filter)
+  } else {
+    list(result = res, filter = match_filter)
+  }
 }
 
 # DEPRECATED
@@ -532,7 +539,7 @@ runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, 
                                    verbose = TRUE)#, useMC = TRUE)
   result_df <- data.frame(x_effect, x_tt)
   result_df <- result_df[order(result_df$we.eBH, result_df$we.ep, result_df$overlap), ]
-  statistic <- match.arg(statistic, c("welsh", "wilcoxon", "overlap"))
+  statistic <- match.arg(statistic, c("all", "welsh", "wilcoxon", "overlap"))
   if (statistic == "welsh") {
     rename_target_id(
       data.frame(target_id = rownames(result_df),
@@ -555,7 +562,7 @@ runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, 
           effect = effect),
         stringsAsFactors = FALSE),
       as_gene = as_gene)
-  } else {
+  } else if (statistic == "overlap") {
     result <- rename_target_id(
       data.frame(target_id = rownames(result_df),
         dplyr::select(result_df, qval = overlap,
@@ -567,6 +574,28 @@ runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, 
         stringsAsFactors = FALSE),
       as_gene = as_gene)
     result$pval <- result_df$overlap
+    result
+  } else {
+    result <- list()
+    result$welsh <- rename_target_id(
+      data.frame(target_id = rownames(result_df),
+        dplyr::select(result_df, pval = we.ep,
+          qval = we.eBH, effect = effect),
+        stringsAsFactors = FALSE),
+      as_gene = as_gene)
+    result$wilcoxon <- rename_target_id(
+      data.frame(target_id = rownames(result_df),
+        dplyr::select(result_df, pval = wi.ep,
+          qval = wi.eBH, effect = effect),
+        stringsAsFactors = FALSE),
+      as_gene = as_gene)
+    result$overlap <- rename_target_id(
+      data.frame(target_id = rownames(result_df),
+        dplyr::select(result_df, qval = overlap,
+          effect = effect),
+        stringsAsFactors = FALSE),
+      as_gene = as_gene)
+    result$overlap$pval <- result_df$overlap
     result
   }
 }
