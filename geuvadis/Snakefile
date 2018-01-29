@@ -55,9 +55,9 @@ rule all:
                exp = SIM_NAMES, id = SIM_IDS),
         expand('sims/{sim}/{exp}/{id}/salmon/abundance.h5', sim = 'isoform_5_5_15_387_1',
                exp = SIM_NAMES, id = SIM_IDS),
-        expand('results/{sim}/small_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/down_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/up_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/small_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/down_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/up_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/benchmark_report.html', sim = 'isoform_5_5_15_387_1')
 
 def finn_sample_input(wildcards):
@@ -294,13 +294,13 @@ def get_isoform_dependencies(wildcards):
                   num = nums)
     return ret
 
-rule benchmark_isoform:
+rule benchmark_isoform_sal:
     input:
         get_isoform_dependencies
     output:
-        'results/{sim}/small_benchmarks.rds',
-        'results/{sim}/down_benchmarks.rds',
-        'results/{sim}/up_benchmarks.rds'
+        'results/{sim}/small_sal_benchmarks.rds',
+        'results/{sim}/down_sal_benchmarks.rds',
+        'results/{sim}/up_sal_benchmarks.rds'
     threads:
         N_SIM
     shell:
@@ -308,9 +308,9 @@ rule benchmark_isoform:
 
 rule benchmark_report:
     input:
-        'results/{sim}/small_benchmarks.rds',
-        'results/{sim}/down_benchmarks.rds',
-        'results/{sim}/up_benchmarks.rds'
+        'results/{sim}/small_sal_benchmarks.rds',
+        'results/{sim}/down_sal_benchmarks.rds',
+        'results/{sim}/up_sal_benchmarks.rds'
     output:
         'results/{sim}/benchmark_report.html',
     threads:
