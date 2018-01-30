@@ -98,9 +98,9 @@ method_colors_lfc <- c(method_colors, c(LFC = '#4393c3', GLFC = '#fddbc7'))
 ## each method on their own filter
 
 ```{r}
-all_benchmarks <- readRDS(paste0('../results/', sim_name,
-  '/isoform_benchmarks.rds'))
-all_benchmarks <- all_benchmarks[sort(names(all_benchmarks))]
+small_sal_benchmarks <- readRDS(paste0('../results/', sim_name,
+  '/small_sal_benchmarks.rds'))
+small_sal_benchmarks <- small_sal_benchmarks[sort(names(small_sal_benchmarks))]
 ```
 
 For the paper, let's look at only a subset of the things.
@@ -108,8 +108,8 @@ In general, we are recommending the likelihood ratio test and aggregation.
 Let's remove everything else:
 
 ```{r}
-to_remove <- c('sleuth.wt')
-subset_benchmarks <- lapply(all_benchmarks,
+to_remove <- c('sleuth.wt', 'sleuthALR.wt', 'ALDEx2.welsh', 'ALDEx2.wilcoxon')
+subset_small_benchmarks <- lapply(small_sal_benchmarks,
   function(bench_list) {
     lapply(bench_list,
       function(bench) {
@@ -120,7 +120,7 @@ subset_benchmarks <- lapply(all_benchmarks,
 
 ```{r}
 if (simulation_mode == 'reference') {
-  sb <- lapply(subset_benchmarks,
+  sb <- lapply(subset_small_benchmarks,
     function(bench_list) {
       lapply(bench_list,
         function(bench) {
@@ -135,14 +135,14 @@ if (simulation_mode == 'reference') {
             join_mode = 'intersect')
         })
     })
-  subset_benchmarks <- sb
+  subset_small_benchmarks <- sb
 }
 ```
 
 Generate all of the FDR versus number of differentially expressed genes
 
 ```{r}
-subset_nde_plot <- lapply(subset_benchmarks,
+subset_nde_plot <- lapply(subset_small_benchmarks,
   function(bench) {
     suppressMessages(fdr_nde_plot(bench)) +
       theme_hp()
@@ -176,7 +176,7 @@ current_limits <- switch(simulation_mode,
       expand = FALSE)
   )
 
-subset_fdr_efdr_plot <- lapply(subset_benchmarks,
+subset_fdr_efdr_plot <- lapply(subset_small_benchmarks,
   function(bench) {
     suppressMessages(fdr_efdr_plot(bench)) +
       theme_hp() +
@@ -191,7 +191,7 @@ plot_grid(plotlist = subset_fdr_efdr_plot, ncol = n_grid_columns)
 ## box plots of estimated fdr versus true fdr
 
 ```{r}
-subset_bp <- lapply(subset_benchmarks,
+subset_bp <- lapply(subset_small_benchmarks,
   function(bench) {
     suppressMessages(boxplot_prep(bench, c(0.01, 0.05, 0.10)))
   })
@@ -242,7 +242,7 @@ plot_grid(plotlist = subset_specificity_efdr_boxplot, ncol = n_grid_columns)
 ```
 
 ```{r}
-subset_fdr_power <- lapply(subset_benchmarks,
+subset_fdr_power <- lapply(subset_small_benchmarks,
   function(bench) {
     fdr_power_plot(bench)
   })
@@ -254,7 +254,7 @@ plot_grid(plotlist = subset_fdr_power, ncol = n_grid_columns)
 Use `sim_filter = TRUE` on isoforms to remove things that we remove isoforms that we expect to be to locally express to detect.
 
 ```{r}
-subset_fdr <- lapply(subset_benchmarks,
+subset_fdr <- lapply(subset_small_benchmarks,
   function(bench) {
     suppressMessages(get_fdr(bench, sim_filter = TRUE)$pvals)
   })
@@ -281,7 +281,7 @@ subset_fdr_power_plot <- lapply(subset_fdr_power_plot,
 p <- plot_grid(plotlist = subset_fdr_power_plot, ncol = n_grid_columns)
 p
 
-filename <- file.path(base_dir, paste0('isoform.pairwise_zoom_', sim_name,
+filename <- file.path(base_dir, paste0('small.pairwise_zoom_', sim_name,
   default_extension))
 save_plot(filename, p, base_aspect_ratio = 1.6, base_height = 15)
 ```
@@ -298,7 +298,7 @@ current_limits <- switch(simulation_mode,
       expand = FALSE)
   )
 
-all_nde_plot <- lapply(all_benchmarks,
+all_nde_plot <- lapply(small_sal_benchmarks,
   function(bench) {
     suppressMessages(fdr_nde_plot(bench)) +
       theme_hp()
@@ -308,7 +308,7 @@ plot_grid(plotlist = all_nde_plot, ncol = n_grid_columns)
 ```
 
 ```{r}
-all_fdr_efdr_plot <- lapply(all_benchmarks,
+all_fdr_efdr_plot <- lapply(small_sal_benchmarks,
   function(bench) {
     suppressMessages(fdr_efdr_plot(bench)) +
       theme_hp() +
@@ -318,7 +318,7 @@ plot_grid(plotlist = all_fdr_efdr_plot, ncol = n_grid_columns)
 ```
 
 ```{r}
-all_fdr_power <- lapply(all_benchmarks,
+all_fdr_power <- lapply(small_sal_benchmarks,
   function(bench) {
     fdr_power_plot(bench, sim_filter = TRUE) +
     theme_hp()
