@@ -6,6 +6,7 @@ if (!file.exists('r_pkg_install_success.txt')) {
   install.packages('devtools')
   install.packages('rmarkdown')
   install.packages('dplyr')
+  install.packages('cowplot')
 
   source("https://bioconductor.org/biocLite.R")
   biocLite()
