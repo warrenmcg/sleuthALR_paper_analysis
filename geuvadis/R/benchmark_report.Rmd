@@ -251,12 +251,12 @@ plot_grid(plotlist = subset_fdr_power, ncol = n_grid_columns)
 
 ## fdr/power curves when taking the intersection of filters
 
-Use `sim_filter = TRUE` on isoforms to remove things that we remove isoforms that we expect to be to locally express to detect.
+Use `sim_filter = FALSE` on isoforms because the filtering was already done in the oracles
 
 ```{r}
 subset_fdr <- lapply(subset_small_benchmarks,
   function(bench) {
-    suppressMessages(get_fdr(bench, sim_filter = TRUE)$pvals)
+    suppressMessages(get_fdr(bench, sim_filter = FALSE)$pvals)
   })
 ```
 
@@ -320,7 +320,7 @@ plot_grid(plotlist = all_fdr_efdr_plot, ncol = n_grid_columns)
 ```{r}
 all_fdr_power <- lapply(small_sal_benchmarks,
   function(bench) {
-    fdr_power_plot(bench, sim_filter = TRUE) +
+    fdr_power_plot(bench, sim_filter = FALSE) +
     theme_hp()
   })
 
