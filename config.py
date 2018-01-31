@@ -19,6 +19,7 @@ N_THREADS = 50
 BIN = BASE + '/software/bin'
 
 KALLISTO = BIN + '/kallisto'
+SALMON = BIN + '/salmon'
 
 # UPDATED_PATH = 'PATH=' + ':'.join([
 #     RSEM_PATH,
@@ -33,7 +34,7 @@ FEATURE_COUNTS = BIN + '/featureCounts'
 
 SEQTK = BIN + '/seqtk'
 
-BOWTIE = BIN + '/bowtie'
+PANDOC = BIN + '/pandoc'
 
 # import os
 

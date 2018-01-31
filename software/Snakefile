@@ -3,10 +3,12 @@ include: '../config.py'
 rule all:
     input:
         KALLISTO,
+        SALMON,
         HISAT,
         SAMTOOLS,
         FEATURE_COUNTS,
         SEQTK,
+        PANDOC,
 
         'versions.html'
 
@@ -26,7 +28,7 @@ rule get_kallisto:
     output:
         KALLISTO
     params:
-        url = 'https://github.com/pachterlab/kallisto/releases/download/v0.42.4/kallisto_linux-v0.42.4.tar.gz',
+        url = 'https://github.com/pachterlab/kallisto/releases/download/v0.43.1/kallisto_linux-v0.43.1.tar.gz',
         tmp = 'kallisto_linux'
     shell:
         'wget -O kallisto_binary.tar.gz {params.url}; '
@@ -35,6 +37,21 @@ rule get_kallisto:
         'find {params.tmp} -perm /111 -type f -exec cp {{}} bin \;'
         ' && '
         'rm -rf {params.tmp} kallisto*'
+
+rule get_salmon:
+    output:
+        SALMON
+    params:
+        url = 'https://github.com/COMBINE-lab/salmon/releases/download/v0.8.2/Salmon-0.8.2_linux_x86_64.tar.gz'
+        tmp = 'salmon_linux'
+    shell:
+        'wget -O salmon_binary.tar.gz {params.url}; '
+        'tar -xf salmon_binary.tar.gz; '
+        'mv Salmon* {params.tmp}; '
+        'cp -r {params.tmp}/lib .; '
+        'cp -r {params.tmp}/bin/* bin; '
+        ' && '
+        'rm -rf {params.tmp} salmon* Salmon*'
 
 rule get_samtools:
     output:
@@ -100,3 +117,15 @@ rule get_seqtk:
         ' find {params.tmp} -maxdepth 1 -perm /111 -type f -exec cp {{}} bin \;'
         ' && '
         ' rm -rf {params.tmp}'
+
+rule get_pandoc:
+    output:
+        PANDOC
+    params:
+        url = 'https://github.com/jgm/pandoc/releases/download/2.1.1/pandoc-2.1.1-linux.tar.gz'
+    shell:
+        'wget {params.url}; mkdir tmp; '
+        'tar xvzf pandoc-2.1.1-linux.tar.gz --strip-components 1 -C tmp; '
+        'mv tmp/share .; mv tmp/bin/* bin/; '
+        'rm -r tmp/; '
+        'rm pandoc-2.1.1-linux.tar.gz'
