@@ -143,7 +143,7 @@ load_isoform_results_intersect <- function(
 
     res <- runALDEx2(obs_raw, stc = sample_to_condition, match_filter = s_which_filter,
                      which_test = 'all', ...)
-    all_results <- list(ALDEx2.overlap = res$overlap, ALDEx2.welsh = res$welsh,
+    all_results <- list(ALDEx2.overlap = res$overlap, ALDEx2.welch = res$welch,
                         ALDEx2.wilcoxon = res$wilcoxon)
     all_results
   } else {
@@ -302,7 +302,7 @@ aldex2_filter_and_run <- function(counts, denom, stc, match_filter, which_test) 
   match_filter <- names(which(match_filter))
   if (which_test == "all") {
     list(aldex2_overlap = res$overlap,
-         aldex2_welsh = res$welsh,
+         aldex2_welch = res$welch,
          aldex2_wilcoxon = res$wilcoxon,
          filter = match_filter)
   } else {
@@ -539,7 +539,7 @@ rename_target_id <- function(df, as_gene = FALSE) {
 }
 
 ## NEW METHOD: Run ALDEx2
-runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, test = "t", statistic = "welsh") {
+runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, test = "t", statistic = "welch") {
   mode(counts) <- "integer"
   counts_mat <- as.data.frame(counts)
   x <- ALDEx2::aldex.clr(reads = counts_mat, conds = conditions, mc.samples = 128, denom = denom,
@@ -556,8 +556,8 @@ runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, 
                                    verbose = TRUE)#, useMC = TRUE)
   result_df <- data.frame(x_effect, x_tt)
   result_df <- result_df[order(result_df$we.eBH, result_df$we.ep, result_df$overlap), ]
-  statistic <- match.arg(statistic, c("all", "welsh", "wilcoxon", "overlap"))
-  if (statistic == "welsh") {
+  statistic <- match.arg(statistic, c("all", "welch", "wilcoxon", "overlap"))
+  if (statistic == "welch") {
     rename_target_id(
       data.frame(target_id = rownames(result_df),
         dplyr::select(result_df, pval = we.ep,
@@ -594,7 +594,7 @@ runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, 
     result
   } else {
     result <- list()
-    result$welsh <- rename_target_id(
+    result$welch <- rename_target_id(
       data.frame(target_id = rownames(result_df),
         dplyr::select(result_df, pval = we.ep,
           qval = we.eBH, effect = effect),

@@ -63,11 +63,11 @@ aldex2_res <- mclapply(1:N_SIM,
     aldex2 <- load_isoform_results_intersect(sim_name, i, 'salmon', 'ALDEx2',
       aldex2_filter_and_run, denom = 'ENST00000466430.5')
     list(ALDEx2.overlap = aldex2$ALDEx2.overlap,
-         ALDEx2.welsh = aldex2$ALDEx2.welsh,
+         ALDEx2.welch = aldex2$ALDEx2.welch,
          ALDEx2.wilcoxon = aldex2$ALDEx2.wilcoxon)
   })
 all_results_sal$ALDEx2.overlap <- lapply(aldex2_res, '[[', 'ALDEx2.overlap')
-all_results_sal$ALDEx2.welsh <- lapply(aldex2_res, '[[', 'ALDEx2.welsh')
+all_results_sal$ALDEx2.welch <- lapply(aldex2_res, '[[', 'ALDEx2.welch')
 all_results_sal$ALDEx2.wilcoxon <- lapply(aldex2_res, '[[', 'ALDEx2.wilcoxon')
 
 message(paste('running limma', Sys.time()))
