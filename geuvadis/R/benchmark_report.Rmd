@@ -85,14 +85,6 @@ set the number of columns for each grid
 n_grid_columns <- 2
 ```
 
-ignore the following when plotting estimated fdr:
-
-```{r}
-ignore_fdr <- c('GLFC', 'LFC')
-# method_colors_lfc <- c(method_colors, c(LFC = 'black', GLFC = 'dimgray'))
-method_colors_lfc <- c(method_colors, c(LFC = '#4393c3', GLFC = '#fddbc7'))
-```
-
 # isoform benchmarks
 
 ## each method on their own filter
@@ -116,6 +108,20 @@ subset_small_benchmarks <- lapply(small_sal_benchmarks,
         filter_benchmark(bench, to_remove, join_mode = 'intersect')
       })
   })
+```
+
+# rename the remaining benchmarks to pretty names
+
+```{r}
+original_labels <- c('sleuth.lrt', 'sleuthALR.lrt', 'ALDEx2.overlap',
+  'edgeR', 'DESeq2', 'limmaVoom')
+new_labels_sal <- c('sleuth', 'sleuth-ALR', "ALDEx2',
+  'edgeR', 'DESeq2', 'voom')
+subset_small_benchmarks <- lapply(subset_small_benchmarks, function(bench_list) {
+  lapply(bench_list, function(bench) {
+    rename_benchmark(bench, original_labels, new_labels_sal)
+  })
+})
 ```
 
 ```{r}

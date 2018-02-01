@@ -108,7 +108,8 @@ all_sal_benchmarks <- lapply(seq_along(all_results_sal),
         } else {
           oracle <- oracles$main_oracle[[j]]
         }
-        new_de_benchmark(x, method_name, oracle)
+        new_de_benchmark(x, method_name, oracle, de_colors = full_method_colors[method_name],
+                         de_linetypes = method_sal_ltys[method_name])
       }, mc.cores = n_cpu)
   })
 names(all_sal_benchmarks) <- names(all_results_sal)

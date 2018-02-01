@@ -14,6 +14,21 @@ method_colors_old <- c('DESeq2' = "#0072B2",
   sleuth = 'black',
   `sleuth-ALR` = 'firebrick1')
 
+full_method_colors <- c(DESeq2 = '#2166ac',
+  edgeR = '#92c5de',
+  limmaVoom = '#E69F00',
+  ALDEx2.overlap = '#009E73',
+  ALDEx2.wilcoxon = '#CC79A7',
+  ALDEx2.welch = '#664600',
+  sleuth.lrt = '#999999',
+  sleuth.wt = '#999999',
+  sleuthALR.lrt = '#000000',
+  sleuthALR.wt = '#000000')
+
+method_kal_ltys <- rep(1, length(full_method_colors))
+method_sal_ltys <- rep(2, length(full_method_colors))
+names(method_kal_ltys) <- names(method_sal_ltys) <- names(full_method_colors)
+
 #' Load the differential expression truth
 #'
 #' This function loads the isoform level information and gene level information.
