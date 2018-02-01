@@ -47,7 +47,7 @@ PANDOC = BIN + '/pandoc'
 # simulation wildcards
 ###
 SIM_NAMES = ['run' + format(i, '02d') for i in range(1,16)]
-SIM_IDS = ['sample' + format(i, '02d') for i in range(1,11)]
+SIM_IDS = ['sample_' + format(i, '02d') for i in range(1,11)]
 
 ###
 # annotations
@@ -98,7 +98,7 @@ def source_rmd(base, file_name, output_name = None):
     if output_name is None:
         output_name = splitext(file_name)[0]
         output_name += '.html'
-    return 'OMP_NUM_THREADS=1 Rscript --vanilla --default-packages=methods,stats,utils,knitr -e \'setwd("{0}")\' -e \'rmarkdown::render("{1}", output_file = "{2}")\''.format(base, file_name, output_name)
+    return UPDATED_PATH + ' OMP_NUM_THREADS=1 Rscript --vanilla --default-packages=methods,stats,utils,knitr -e \'setwd("{0}")\' -e \'rmarkdown::render("{1}", output_file = "{2}")\''.format(base, file_name, output_name)
 
 def get_sample_ids(fname):
     ret = []
