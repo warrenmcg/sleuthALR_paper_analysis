@@ -58,6 +58,9 @@ rule all:
         expand('results/{sim}/small_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/down_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/up_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/small_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/down_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/up_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/benchmark_report.html', sim = 'isoform_5_5_15_387_1')
 
 def finn_sample_input(wildcards):
@@ -304,13 +307,28 @@ rule benchmark_isoform_sal:
     threads:
         N_SIM
     shell:
-        source_r('R', 'bench_isoform.R') + ' {threads} {wildcards.sim}'
+        source_r('R', 'bench_isoform_salmon.R') + ' {threads} {wildcards.sim}'
+
+rule benchmark_isoform_kal:
+    input:
+        get_isoform_dependencies
+    output:
+        'results/{sim}/small_kal_benchmarks.rds',
+        'results/{sim}/down_kal_benchmarks.rds',
+        'results/{sim}/up_kal_benchmarks.rds'
+    threads:
+        N_SIM
+    shell:
+        source_r('R', 'bench_isoform_kallisto.R') + ' {threads} {wildcards.sim}'
 
 rule benchmark_report:
     input:
         'results/{sim}/small_sal_benchmarks.rds',
         'results/{sim}/down_sal_benchmarks.rds',
-        'results/{sim}/up_sal_benchmarks.rds'
+        'results/{sim}/up_sal_benchmarks.rds',
+        'results/{sim}/small_kal_benchmarks.rds',
+        'results/{sim}/down_kal_benchmarks.rds',
+        'results/{sim}/up_kal_benchmarks.rds'
     output:
         'results/{sim}/benchmark_report.html',
     threads:
