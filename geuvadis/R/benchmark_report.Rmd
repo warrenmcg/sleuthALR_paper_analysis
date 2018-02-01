@@ -93,6 +93,9 @@ n_grid_columns <- 2
 small_sal_benchmarks <- readRDS(paste0('../results/', sim_name,
   '/small_sal_benchmarks.rds'))
 small_sal_benchmarks <- small_sal_benchmarks[sort(names(small_sal_benchmarks))]
+small_kal_benchmarks <- readRDS(paste0('../results/', sim_name,
+  '/small_kal_benchmarks.rds'))
+small_kal_benchmarks <- small_kal_benchmarks[sort(names(small_kal_benchmarks))]
 ```
 
 For the paper, let's look at only a subset of the things.
@@ -101,7 +104,14 @@ Let's remove everything else:
 
 ```{r}
 to_remove <- c('sleuth.wt', 'sleuthALR.wt', 'ALDEx2.welch', 'ALDEx2.wilcoxon')
-subset_small_benchmarks <- lapply(small_sal_benchmarks,
+subset_small_s_benchmarks <- lapply(small_sal_benchmarks,
+  function(bench_list) {
+    lapply(bench_list,
+      function(bench) {
+        filter_benchmark(bench, to_remove, join_mode = 'intersect')
+      })
+  })
+subset_small_k_benchmarks <- lapply(small_kal_benchmarks,
   function(bench_list) {
     lapply(bench_list,
       function(bench) {
@@ -115,13 +125,22 @@ subset_small_benchmarks <- lapply(small_sal_benchmarks,
 ```{r}
 original_labels <- c('sleuth.lrt', 'sleuthALR.lrt', 'ALDEx2.overlap',
   'edgeR', 'DESeq2', 'limmaVoom')
-new_labels_sal <- c('sleuth', 'sleuth-ALR', "ALDEx2',
-  'edgeR', 'DESeq2', 'voom')
-subset_small_benchmarks <- lapply(subset_small_benchmarks, function(bench_list) {
+new_labels_sal <- c('sleuth Salmon', 'sleuth-ALR Salmon', 'ALDEx2 Salmon',
+  'edgeR Salmon', 'DESeq2 Salmon', 'voom Salmon')
+new_labels_kal <- c('sleuth kallisto', 'sleuth-ALR kallisto', 'ALDEx2 kallisto',
+  'edgeR kallisto', 'DESeq2 kallisto', 'voom kallisto')
+subset_small_s_benchmarks <- lapply(subset_small_s_benchmarks, function(bench_list) {
   lapply(bench_list, function(bench) {
     rename_benchmark(bench, original_labels, new_labels_sal)
   })
 })
+subset_small_k_benchmarks <- lapply(subset_small_k_benchmarks, function(bench_list) {
+  lapply(bench_list, function(bench) {
+    rename_benchmark(bench, original_labels, new_labels_kal)
+  })
+})
+subset_small_benchmarks <- append(subset_small_s_benchmarks, subset_small_k_benchmarks)
+subset_small_benchmarks <- subset_small_benchmarks[sort(names(subset_small_benchmarks))]
 ```
 
 ```{r}
