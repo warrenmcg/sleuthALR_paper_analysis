@@ -92,6 +92,7 @@ rule salmon_index:
         'salmon index'
         ' -i {output}'
         ' -p {threads}'
+        ' --keepDuplicates'
         ' -t {input}'
 
 ###
