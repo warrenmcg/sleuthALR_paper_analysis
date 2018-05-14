@@ -7,18 +7,22 @@ rule all:
         HISAT,
         SAMTOOLS,
         FEATURE_COUNTS,
-        SEQTK,
+        OPENSSL,
         PANDOC,
-
+        'r_pkg_install_success.txt',
         'versions.html'
 
 rule get_versions:
+    input:
+        'r_pkg_install_success.txt'
     output:
         'versions.html'
     shell:
         source_rmd('.', 'versions.Rmd')
 
 rule get_r_pkgs:
+   input:
+        OPENSSL
     output:
         'r_pkg_install_success.txt'
     shell:
@@ -28,7 +32,7 @@ rule get_kallisto:
     output:
         KALLISTO
     params:
-        url = 'https://github.com/pachterlab/kallisto/releases/download/v0.43.1/kallisto_linux-v0.43.1.tar.gz',
+        url = 'https://github.com/pachterlab/kallisto/releases/download/v0.44.0/kallisto_linux-v0.44.0.tar.gz',
         tmp = 'kallisto_linux'
     shell:
         'wget -O kallisto_binary.tar.gz {params.url}; '
@@ -42,7 +46,7 @@ rule get_salmon:
     output:
         SALMON
     params:
-        url = 'https://github.com/COMBINE-lab/salmon/releases/download/v0.8.2/Salmon-0.8.2_linux_x86_64.tar.gz'
+        url = 'https://github.com/COMBINE-lab/salmon/releases/download/v0.9.1/Salmon-0.9.1_linux_x86_64.tar.gz',
         tmp = 'salmon_linux'
     shell:
         'wget -O salmon_binary.tar.gz {params.url}; '
@@ -50,7 +54,6 @@ rule get_salmon:
         'mv Salmon* {params.tmp}; '
         'cp -r {params.tmp}/lib .; '
         'cp -r {params.tmp}/bin/* bin; '
-        ' && '
         'rm -rf {params.tmp} salmon* Salmon*'
 
 rule get_samtools:
@@ -99,25 +102,6 @@ rule get_feature_counts:
         ' && '
         'rm -rf subread*'
 
-rule get_seqtk:
-    output:
-        SEQTK
-    params:
-        url = 'https://github.com/lh3/seqtk',
-        tmp = 'seqtk',
-        branch = '4feb6e81444ab6bc44139dd3a125068f81ae4ad8'
-    shell:
-        'git clone {params.url} {params.tmp};'
-        ' git reset --hard {params.branch};'
-        # 'git clone --branch {params.branch} --depth 1 {params.url} {params.tmp};'
-        ' cd {params.tmp};'
-        ' make;'
-        ' cd ..;'
-        # 'find {params.tmp} -maxdepth 1 -perm +o+x -type f -exec cp {{}} bin \;'
-        ' find {params.tmp} -maxdepth 1 -perm /111 -type f -exec cp {{}} bin \;'
-        ' && '
-        ' rm -rf {params.tmp}'
-
 rule get_pandoc:
     output:
         PANDOC
@@ -129,3 +113,14 @@ rule get_pandoc:
         'mv tmp/share .; mv tmp/bin/* bin/; '
         'rm -r tmp/; '
         'rm pandoc-2.1.1-linux.tar.gz'
+
+rule get_openssl:
+    output:
+        OPENSSL
+    params:
+        url = 'https://www.openssl.org/source/openssl-1.1.0h.tar.gz'
+    shell:
+        'wget {params.url}; mkdir tmp; mkdir local'
+        'tar xvzf openssl-1.1.0h.tar.gz --strip-components 1 -C tmp; '
+        'cd tmp; ./config --prefix={LOCAL} --openssldir={LOCAL}/ssl;'
+        'make; make test; make install; cd ..; rm -r tmp/ openssl-1.1.0h.tar.gz'
