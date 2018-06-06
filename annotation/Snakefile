@@ -20,7 +20,15 @@ rule all:
         MOUSE_KALLISTO_INDEX,
         MOUSE_SALMON_INDEX,
         MOUSE_GENOME_FA,
-        expand('{base}.{idx}.ht2', base = MOUSE_HISAT_INDEX, idx = (1, 6))
+        expand('{base}.{idx}.ht2', base = MOUSE_HISAT_INDEX, idx = (1, 6)),
+
+        ###
+        # yeast
+        ###
+        YEAST_ANNOS,
+        YEAST_TRANSCRIPTOME_FA,
+        YEAST_KALLISTO_INDEX,
+        YEAST_SALMON_INDEX
 
 rule get_transcriptome:
     output:
@@ -172,3 +180,56 @@ rule make_mouse_hisat_index:
         ' -p {threads}'
         ' {input}'
         ' {MOUSE_HISAT_INDEX}'
+
+###
+# yeast stuff
+###
+
+rule get_yeast_transcriptome:
+    output:
+        YEAST_TRANSCRIPTOME_FA
+    shell:
+        'curl -o ASM294v2.pombase.cdna.fa.gz'
+        ' --silent'
+        ' ftp://ftp.ensemblgenomes.org/pub/release-37/fungi/fasta/schizosaccharomyces_pombe/cdna/Schizosaccharomyces_pombe.ASM294v2.cdna.all.fa.gz && '
+        ' gunzip ASM294v2.pombase.cdna.fa.gz && '
+        'curl -o ASM294v2.pombase.ncrna.fa.gz'
+        ' --silent'
+        ' ftp://ftp.ensemblgenomes.org/pub/release-37/fungi/fasta/schizosaccharomyces_pombe/ncrna/Schizosaccharomyces_pombe.ASM294v2.ncrna.fa.gz && '
+        ' gunzip ASM294v2.pombase.ncrna.fa.gz && '
+        ' cat ASM294v2.pombase.cdna.fa ASM294v2.pombase.ncrna.fa > ASM294v2.pombase.all.fa && '
+        ' rm ASM294v2.pombase.cdna.fa ASm294v2.pombase.ncrna.fa'
+
+rule yeast_kallisto_index:
+    input:
+        YEAST_TRANSCRIPTOME_FA
+    output:
+        YEAST_KALLISTO_INDEX
+    shell:
+        '{UPDATED_PATH} '
+        'kallisto index'
+        ' -i {output}'
+        ' {input}'
+
+rule yeast_salmon_index:
+    input:
+        YEAST_TRANSCRIPTOME_FA
+    threads:
+        N_THREADS
+    output:
+        YEAST_SALMON_INDEX
+    shell:
+        '{UPDATED_PATH} '
+        'salmon index'
+        ' -i {output}'
+        ' -p {threads}'
+        ' --keepDuplicates'
+        ' -t {input}'
+
+rule yeast_annos:
+    input:
+        YEAST_TRANSCRIPTOME_FA
+    output:
+        YEAST_ANNOS
+    shell:
+        source_r('R', 'make_annos.R')
