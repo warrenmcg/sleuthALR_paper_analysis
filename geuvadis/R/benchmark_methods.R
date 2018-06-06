@@ -21,6 +21,22 @@ get_human_gene_names <- function() {
     mart = mart)
   ttg <- dplyr::mutate(ttg, target_id = paste(ensembl_transcript_id, transcript_version, sep = "."),
     ens_gene = paste(ensembl_gene_id, version, sep = "."))
+  par_y_file <- file.path("../metadata",
+                          "EnsV87_PAR_Y_transcripts.txt")
+  par_y_list <- read.table(par_y_file,
+                           sep = "\t",
+                           col.names = c("target_id"),
+                           stringsAsFactors = F)
+  par_y_list$ensembl_transcript_id <- sapply(par_y_list$target_id,
+                                             function(x)
+                                               strsplit(x, ".", fixed=T)[[1]][1])
+  par_y_list <- merge(par_y_list, dplyr::select(ttg, -target_id),
+                      by="ensembl_transcript_id")
+  par_y_list$ensembl_gene_id <- paste(par_y_list$ensembl_gene_id,
+                                      "PAR_Y",
+                                      sep="_")
+  ttg <- rbind(ttg, par_y_list)
+
   ttg <- dplyr::rename(ttg, ext_gene = external_gene_name)
   ttg <- dplyr::select(ttg, target_id, ens_gene, ext_gene)
   ttg
