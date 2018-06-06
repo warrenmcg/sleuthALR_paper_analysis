@@ -88,6 +88,13 @@ MOUSE_GENOME_FA = BASE + '/annotation/' + MOUSE_GENOME_NAME + '.fa'
 
 MOUSE_HISAT_INDEX = BASE + '/index/' + MOUSE_GENOME_NAME
 
+YEAST_NAME = 'ASM294v2.pombase.all'
+YEAST_ANNOS = BASE + '/annotation/' + YEAST_NAME + '_annos.txt'
+YEAST_TRANSCRIPTOME_FA = BASE + '/annotation/' + YEAST_NAME + '.fa'
+
+YEAST_KALLISTO_INDEX = BASE + '/index/' + YEAST_NAME + '.kidx'
+YEAST_SALMON_INDEX = BASE + '/index/' + YEAST_NAME + '.sidx'
+
 ###
 # functions
 ###
