@@ -67,13 +67,6 @@ all_validation$sleuth.wt <- lapply(sleuth_validation, '[[', 'sleuth.wt')
 
 rm(sleuth_validation)
 
-all_validation$DESeq <- mclapply(seq_along(validation_sets),
-  function(i) {
-    validation <- validation_sets[[i]]
-    obs <- obs_raw[[i]]
-    DESeq_filter_and_run(obs, validation, dummy_filter)$result
-  })
-
 all_validation$DESeq2 <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
@@ -95,28 +88,6 @@ all_validation$limmaVoom <- mclapply(seq_along(validation_sets),
     obs <- obs_raw[[i]]
     sf <- sleuth_filter_bool[[i]]
     limma_filter_and_run(obs, validation, sf)$result
-  })
-
-# use the sleuth filter since EBSeq doesn't have a recommended filter
-# debugonce(EBSeq_isoform_filter_and_run)
-all_validation$EBSeq <- mclapply(seq_along(validation_sets),
-  function(i) {
-    validation <- validation_sets[[i]]
-    obs <- obs_raw[[i]]
-    sf <- sleuth_filter_bool[[i]]
-    EBSeq_isoform_filter_and_run(obs, validation, sf)$result
-  })
-
-all_validation$Cuffdiff2 <- mclapply(seq_along(validation_sets),
-  function(i) {
-    path <- file.path('..', 'results', 'validation', i, 'cuffdiff')
-    res <- get_cuffdiff(path)$isoform
-    res <- dplyr::filter(res, status == 'OK')
-    # the next lines are relevant since cuffdiff will likely test on a superset
-    # due to the larger gtf
-    res <- dplyr::inner_join(res, dummy_filter_df, by = 'target_id')
-    res <- dplyr::mutate(res, qval = p.adjust(pval, method = 'BH'))
-    res
   })
 
 all_validation <- lapply(all_validation,
@@ -165,13 +136,6 @@ all_training <- list()
 all_training$sleuth.lrt <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 all_training$sleuth.wt <- lapply(sleuth_training, '[[', 'sleuth.wt')
 
-all_training$DESeq <- mclapply(seq_along(training_sets),
-  function(i) {
-    training <- training_sets[[i]]
-    obs <- obs_raw[[i]]
-    DESeq_filter_and_run(obs, training, dummy_filter)$result
-  })
-
 all_training$DESeq2 <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -195,28 +159,6 @@ all_training$limmaVoom <- mclapply(seq_along(training_sets),
     limma_filter_and_run(obs, training, sf)$result
   })
 
-# use the sleuth filter since EBSeq doesn't have a recommended filter
-# debugonce(EBSeq_isoform_filter_and_run)
-all_training$EBSeq <- mclapply(seq_along(training_sets),
-  function(i) {
-    training <- training_sets[[i]]
-    obs <- obs_raw[[i]]
-    sf <- sleuth_filter_bool[[i]]
-    EBSeq_isoform_filter_and_run(obs, training, sf)$result
-  })
-
-all_training$Cuffdiff2 <- mclapply(seq_along(training_sets),
-  function(i) {
-    path <- file.path('..', 'results', 'training', i, 'cuffdiff')
-    res <- get_cuffdiff(path)$isoform
-    res <- dplyr::filter(res, status == 'OK')
-    # the next lines are relevant since cuffdiff will likely test on a superset
-    # due to the larger gtf
-    res <- dplyr::inner_join(res, dummy_filter_df, by = 'target_id')
-    res <- dplyr::mutate(res, qval = p.adjust(pval, method = 'BH'))
-    res
-  })
-
 self_benchmark <- lapply(seq_along(all_training),
   function(i) {
     method <- names(all_training)[[i]]
@@ -231,53 +173,4 @@ names(self_benchmark) <- names(all_training)
 self_fdr <- lapply(self_benchmark, average_sensitivity_specificity)
 
 saveRDS(self_benchmark, '../results/isoform_self_benchmark.rds')
-# saveRDS(self_fdr, '../results/isoform_self_fdr.rds')
-
-
-
-###
-# NOTE: this stuff is deprecated and for doing every pairwise test
-###
-
-# all_training <- list()
-#
-# all_training$limmaVoom <- lapply(training_sets,
-#   load_isoform_results_intersect_df, 'limmaVoom', limma_filter_and_run)
-#
-# all_training$DESeq2 <- mclapply(training_sets,
-#   load_isoform_results_intersect_df, 'DESeq2', DESeq2_filter_and_run_intersect)
-#
-# all_training$edgeR <- mclapply(training_sets,
-#   load_isoform_results_intersect_df, 'edgeR', edgeR_filter_and_run)
-#
-# all_training$EBSeq <- mclapply(training_sets,
-#   load_isoform_results_intersect_df, 'EBSeq', EBSeq_isoform_filter_and_run)
-#
-# # organization
-# # - first level: the "truth"
-# # - second level: the method being compared
-# # - third level: the replications of the second level
-# all_benchmarks <- lapply(names(all_validation),
-#   function(truth) {
-#     ret <- lapply(seq_along(all_training),
-#       function(i) {
-#         res_method <- all_training[[i]]
-#         validation <- all_validation[[truth]][[i]]
-#         ret <- mclapply(res_method, function(res) {
-#           new_de_benchmark(res, names(res), validation)
-#         })
-#       })
-#     names(ret) <- names(all_training)
-#     ret
-#   })
-# names(all_benchmarks) <- names(all_validation)
-#
-# sensitivity_precision_plots <- lapply(all_benchmarks,
-#   function(method_bench) {
-#     lapply(method_bench, sensitivity_specificity_plot)
-#   })
-#
-# saveRDS(all_benchmarks, '../results/all_benchmarks.rds')
-# saveRDS(sensitivity_precision_plots, '../results/sensitivity_precision_plots.rds')
-#
-# rmarkdown::render('isoform_benchmarks.Rmd')
+saveRDS(self_fdr, '../results/isoform_self_fdr.rds')

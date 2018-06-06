@@ -53,11 +53,6 @@ rule all:
                exp = SIM_NAMES),
         expand('sims/{sim}/{exp}/{id}/kallisto/abundance.h5', sim = 'isoform_5_5_15_387_1',
                exp = SIM_NAMES, id = SIM_IDS),
-        expand('sims/{sim}/{exp}/{id}/salmon/abundance.h5', sim = 'isoform_5_5_15_387_1',
-               exp = SIM_NAMES, id = SIM_IDS),
-        expand('results/{sim}/small_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/down_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/up_sal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/small_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/down_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/up_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
@@ -239,34 +234,6 @@ rule kallisto:
         ' --fr-stranded'
         ' {input[0]} {input[1]}'
 
-rule salmon:
-    input:
-        sim_sample_input
-    output:
-        'sims/{sim}/{exp}/{id}/salmon/',
-        'sims/{sim}/{exp}/{id}/salmon/quant.sf'
-    threads: 5
-    shell:
-        '{UPDATED_PATH} '
-        'salmon quant'
-        ' -i {SALMON_INDEX}'
-        ' --numGibbsSamples 100'
-        ' --gcBias'
-        ' --useVBOpt'
-        ' -o {output[0]}'
-        ' -p {threads}'
-        ' -l "ISF"'
-        ' -1 {input[0]} -2 {input[1]}'
-
-rule prep_fish:
-    input:
-        expand('sims/{{sim}}/{{exp}}/{id}/salmon/quant.sf', id = SIM_IDS)
-    output:
-        expand('sims/{{sim}}/{{exp}}/{id}/salmon/abundance.h5', id = SIM_IDS)
-    threads: 1
-    shell:
-        source_r('R', 'prep_fish.R') + ' {wildcards.sim} {wildcards.exp} "salmon"'
-
 def get_simulation_info(experiment_string):
     mode, a, b, n, seed, sf = experiment_string.split('_')
     result = {
@@ -308,18 +275,6 @@ def get_isoform_dependencies(wildcards):
                   num = nums)
     return ret
 
-rule benchmark_isoform_sal:
-    input:
-        get_isoform_dependencies
-    output:
-        'results/{sim}/small_sal_benchmarks.rds',
-        'results/{sim}/down_sal_benchmarks.rds',
-        'results/{sim}/up_sal_benchmarks.rds'
-    threads:
-        N_SIM
-    shell:
-        source_r('R', 'bench_isoform_salmon.R') + ' {threads} {wildcards.sim}'
-
 rule benchmark_isoform_kal:
     input:
         get_isoform_dependencies
@@ -334,9 +289,6 @@ rule benchmark_isoform_kal:
 
 rule benchmark_report:
     input:
-        'results/{sim}/small_sal_benchmarks.rds',
-        'results/{sim}/down_sal_benchmarks.rds',
-        'results/{sim}/up_sal_benchmarks.rds',
         'results/{sim}/small_kal_benchmarks.rds',
         'results/{sim}/down_kal_benchmarks.rds',
         'results/{sim}/up_kal_benchmarks.rds'

@@ -90,13 +90,6 @@ sleuth_validation <- mclapply(seq_along(validation_sets),
 all_validation$sleuth.lrt <- lapply(sleuth_validation, '[[', 'sleuth.lrt')
 all_validation$sleuth.wt <- lapply(sleuth_validation, '[[', 'sleuth.wt')
 
-all_validation$DESeq <- mclapply(seq_along(validation_sets),
-  function(i) {
-    validation <- validation_sets[[i]]
-    obs <- validation_counts[[i]]
-    DESeq_filter_and_run(obs, validation, dummy_filter)$result
-  })
-
 all_validation$DESeq2 <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
@@ -130,26 +123,6 @@ all_validation$limmaVoom <- mclapply(seq_along(validation_sets),
     limma_filter_and_run(obs, validation, current_filter)$result
   })
 
-all_validation$EBSeq <- mclapply(seq_along(validation_sets),
-  function(i) {
-    validation <- validation_sets[[i]]
-    obs <- validation_counts[[i]]
-    current_filter <- edgeR_filter_validation[[i]]
-    EBSeq_gene_filter_and_run(obs, validation, current_filter)$result
-  })
-
-all_validation$Cuffdiff2 <- mclapply(seq_along(validation_sets),
-  function(i) {
-    path <- file.path('..', 'results', 'validation', i, 'cuffdiff')
-    res <- get_cuffdiff(path)$gene
-    res <- dplyr::filter(res, status == 'OK')
-    # the next lines are relevant since cuffdiff will likely test on a superset
-    # due to the larger gtf
-    res <- dplyr::inner_join(res, dummy_filter_df, by = 'target_id')
-    res <- dplyr::mutate(res, qval = p.adjust(pval, method = 'BH'))
-    res
-  })
-
 all_validation <- lapply(all_validation,
   function(validation) {
     lapply(validation,
@@ -172,13 +145,6 @@ sleuth_training <- mclapply(seq_along(training_sets),
   })
 all_training$sleuth.lrt <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 all_training$sleuth.wt <- lapply(sleuth_training, '[[', 'sleuth.wt')
-
-all_training$DESeq <- mclapply(seq_along(training_sets),
-  function(i) {
-    training <- training_sets[[i]]
-    obs <- training_counts[[i]]
-    DESeq_filter_and_run(obs, training, dummy_filter)$result
-  })
 
 all_training$DESeq2 <- mclapply(seq_along(training_sets),
   function(i) {
@@ -211,26 +177,6 @@ all_training$limmaVoom <- mclapply(seq_along(training_sets),
     obs <- training_counts[[i]]
     current_filter <- edgeR_filter_training[[i]]
     limma_filter_and_run(obs, training, current_filter)$result
-  })
-
-all_training$EBSeq <- mclapply(seq_along(training_sets),
-  function(i) {
-    training <- training_sets[[i]]
-    obs <- training_counts[[i]]
-    current_filter <- edgeR_filter_training[[i]]
-    EBSeq_gene_filter_and_run(obs, training, current_filter)$result
-  })
-
-all_training$Cuffdiff2 <- mclapply(seq_along(training_sets),
-  function(i) {
-    path <- file.path('..', 'results', 'training', i, 'cuffdiff')
-    res <- get_cuffdiff(path)$gene
-    res <- dplyr::filter(res, status == 'OK')
-    # the next lines are relevant since cuffdiff will likely test on a superset
-    # due to the larger gtf
-    res <- dplyr::inner_join(res, dummy_filter_df, by = 'target_id')
-    res <- dplyr::mutate(res, qval = p.adjust(pval, method = 'BH'))
-    res
   })
 
 self_benchmark <- lapply(seq_along(all_training),
