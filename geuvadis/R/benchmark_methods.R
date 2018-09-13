@@ -467,7 +467,7 @@ run_alr <- function(sample_info,
     target_mapping = transcript_gene_mapping,
     beta = 'conditionB',
     denom_name = denom, aggregate_column = gene_column,
-    max_bootstrap = 30,
+    max_bootstrap = max_bootstrap,
     filter_target_id = filter_target_id,
     ...)
   lrt <- sleuth_results(so, 'reduced:full', test_type = 'lrt',
