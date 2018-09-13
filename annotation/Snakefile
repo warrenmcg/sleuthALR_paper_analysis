@@ -145,6 +145,8 @@ rule salmon_mouse_index:
         'salmon index'
         ' -i {output}'
         ' -p {threads}'
+        ' -k 21'
+        ' --keepDuplicates'
         ' -t {input}'
 
 rule get_mouse_genome:
