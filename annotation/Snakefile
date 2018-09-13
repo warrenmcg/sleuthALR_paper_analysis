@@ -123,7 +123,7 @@ rule get_mouse_gtf:
     shell:
         'curl -o gencode.vM12.primary_assembly.annotation.gtf.gz'
         ' --silent'
-        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_25/gencode.vM12.primary_assembly.annotation.gtf.gz && '
+        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M12/gencode.vM12.primary_assembly.annotation.gtf.gz && '
         ' gunzip gencode.vM12.primary_assembly.annotation.gtf.gz && '
         ' sed \'s/^chr//\' gencode.vM12.primary_assembly.annotation.gtf > gencode.vM12.gtf && '
         ' sed \'s/^M/MT/\' gencode.vM12.gtf > {output} && '
