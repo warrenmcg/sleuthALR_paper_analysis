@@ -139,32 +139,32 @@ load_isoform_results_intersect <- function(
   n <- sim$a + sim$b
 
   kal_dirs <- file.path('..', 'sims', sim_name, paste0("run", which_sample),
-    paste0("sample_", sprintf('%02d', 1:n)), tool)
+    paste0("sample_", sprintf('%02d', 1:n)), tool, 'abundance.h5')
   sample_to_condition <- get_sample_to_condition(sim$a, sim$b, kal_dirs)
 
   if (method_label == 'sleuth') {
-    sir <- run_sleuth(sample_to_condition, gene_mode = NULL, ...)
+    sir <- run_sleuth(sample_to_condition, gene_mode = NULL, num_cores = 1, ...)
     all_results <- list(sleuth.lrt = sir$sleuth.lrt, sleuth.wt = sir$sleuth.wt)
     all_results
   } else if (method_label == 'sleuthALR') {
-    all_results <- run_alr(sample_to_condition, gene_mode = NULL, ...)
+    all_results <- run_alr(sample_to_condition, num_cores = 1, ...)
     all_results
   } else if (method_label == 'ALDEx2') {
     # simply do this so we can read in the data
-    so_data <- sleuth_prep(sample_to_condition, ~1, max_bootstrap = 2)
+    suppressMessages(so_data <- sleuth_prep(sample_to_condition, ~1, max_bootstrap = 2, num_cores = 1))
     obs_raw <- sleuth:::spread_abundance_by(so_data$obs_raw, "est_counts")
     rm(so_data)
 
     s_which_filter <- sleuth_filter(obs_raw)
 
-    res <- runALDEx2(obs_raw, stc = sample_to_condition, match_filter = s_which_filter,
-                     which_test = 'all', ...)
-    all_results <- list(ALDEx2.overlap = res$overlap, ALDEx2.welch = res$welch,
-                        ALDEx2.wilcoxon = res$wilcoxon)
+    extra_opts <- list(...)
+    denom <- extra_opts$denom
+    all_results <- aldex2_filter_and_run(obs_raw, stc = sample_to_condition, match_filter = s_which_filter,
+                     which_test = 'all', denom = denom)
     all_results
   } else {
     # simply do this so we can read in the data
-    so_data <- sleuth_prep(sample_to_condition, ~1, max_bootstrap = 2)
+    suppressMessages(so_data <- sleuth_prep(sample_to_condition, ~1, max_bootstrap = 2, num_cores = 1))
     obs_raw <- sleuth:::spread_abundance_by(so_data$obs_raw, "est_counts")
     rm(so_data)
 
@@ -173,6 +173,7 @@ load_isoform_results_intersect <- function(
     method_result <- method_fit_function(obs_raw, sample_to_condition,
       s_which_filter)
 
+    all_results <- list()
     all_results[[method_label]] <- method_result$result
 
     all_results
