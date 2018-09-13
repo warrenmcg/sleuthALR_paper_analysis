@@ -323,9 +323,9 @@ aldex2_filter_and_run <- function(counts, denom, stc, match_filter, which_test) 
   res <- runALDEx2(counts, stc$condition, denom = denom, FALSE, "t", which_test, match_filter)
   match_filter <- names(which(match_filter))
   if (which_test == "all") {
-    list(aldex2_overlap = res$overlap,
-         aldex2_welch = res$welch,
-         aldex2_wilcoxon = res$wilcoxon,
+    list(ALDEx2.overlap = res$overlap,
+         ALDEx2.welch = res$welch,
+         ALDEx2.wilcoxon = res$wilcoxon,
          filter = match_filter)
   } else {
     list(result = res, filter = match_filter)
