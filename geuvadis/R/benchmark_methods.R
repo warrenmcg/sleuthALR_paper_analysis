@@ -83,7 +83,7 @@ sleuth_filter <- function(mat, ...) {
 }
 
 edgeR_filter <- function(mat, ...) {
-  rowSums(cpm(mat) > 1) >= 3
+  rowSums(cpm(mat) > 1) >= (ncol(mat) / 2)
 }
 
 DESeq2_filter <- function(mat, ...) {
