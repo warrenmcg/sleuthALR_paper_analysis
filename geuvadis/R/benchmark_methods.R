@@ -156,9 +156,14 @@ load_isoform_results_intersect <- function(
     rm(so_data)
 
     s_which_filter <- sleuth_filter(obs_raw)
+    edger_filter <- edgeR_filter(obs_raw)
+    s_which_filter <- s_which_filter & edger_filter
 
     extra_opts <- list(...)
     denom <- extra_opts$denom
+    if (!is.null(extra_opts$aldex_filter)) {
+      s_which_filter <- ifelse(extra_opts$aldex_filter, s_which_filter, rep(T, length(s_which_filter)))
+    }
     all_results <- aldex2_filter_and_run(obs_raw, stc = sample_to_condition, match_filter = s_which_filter,
                      which_test = 'all', denom = denom)
     all_results
@@ -302,7 +307,7 @@ load_gene_results_intersect <- function(
 # these functions are used for the isoform level analysis
 ###
 limma_filter_and_run <- function(counts, stc, match_filter) {
-  which_targets <- DESeq2_filter(counts)
+  which_targets <- edgeR_filter(counts)
   match_filter <- match_filter & which_targets
   cds <- make_count_data_set(counts[match_filter, ], stc)
 
@@ -315,7 +320,7 @@ limma_filter_and_run <- function(counts, stc, match_filter) {
 aldex2_filter_and_run <- function(counts, denom, stc, match_filter, which_test) {
   which_targets <- sleuth_filter(counts)
   match_filter <- match_filter & which_targets
-  res <- runALDEx2(counts, stc$condition, denom = denom, FALSE, "t", which_test)
+  res <- runALDEx2(counts, stc$condition, denom = denom, FALSE, "t", which_test, match_filter)
   match_filter <- names(which(match_filter))
   if (which_test == "all") {
     list(aldex2_overlap = res$overlap,
@@ -347,12 +352,12 @@ DESeq2_filter_and_run_intersect <- function(counts, stc, match_filter, # nolint
   if (is_counts) {
     counts <- round(counts)
     mode(counts) <- 'integer'
-    which_targets <- DESeq2_filter(counts)
+    which_targets <- edgeR_filter(counts)
     match_filter <- match_filter & which_targets
     cds <- make_count_data_set(counts[match_filter, ], stc)
   } else {
     cds <- DESeqDataSetFromTximport(counts, stc, ~condition)
-    which_targets <- DESeq2_filter(counts(cds))
+    which_targets <- egdeR_filter(counts(cds))
     match_filter <- match_filter & which_targets
     cds <- cds[match_filter, ]
   }
@@ -442,9 +447,9 @@ make_count_data_set <- function(counts, sample_info) {
 }
 
 run_sleuth_prep <- function(sample_info, max_bootstrap = 30, gene_column = NULL,
-  ...) {
+  filter_target_id = NULL, ...) {
   so <- sleuth_prep(sample_info, ~ condition, max_bootstrap = max_bootstrap,
-    target_mapping = transcript_gene_mapping,
+    target_mapping = transcript_gene_mapping, filter_target_id = filter_target_id,
     ...)
   so <- sleuth_fit(so)
 
@@ -456,12 +461,14 @@ run_alr <- function(sample_info,
   max_bootstrap = 30,
   gene_column = NULL,
   denom = NULL,
+  filter_target_id = NULL,
   ...) {
   so <- sleuthALR::make_lr_sleuth_object(sample_info,
     target_mapping = transcript_gene_mapping,
     beta = 'conditionB',
     denom_name = denom, aggregate_column = gene_column,
     max_bootstrap = 30,
+    filter_target_id = filter_target_id,
     ...)
   lrt <- sleuth_results(so, 'reduced:full', test_type = 'lrt',
     show_all = FALSE)[, c('target_id', 'pval', 'qval')]
@@ -476,16 +483,17 @@ run_sleuth <- function(sample_info,
   max_bootstrap = 30,
   gene_mode = NULL,
   gene_column = NULL,
+  filter_target_id = NULL,
   ...) {
 
   so <- NULL
   if (!is.null(gene_column)) {
     so <- run_sleuth_prep(sample_info, max_bootstrap = max_bootstrap,
-       aggregation_column = gene_column,
+      aggregation_column = gene_column, filter_target_id = filter_target_id,
       ...)
   } else {
-  so <- run_sleuth_prep(sample_info, max_bootstrap = max_bootstrap,
-    ...)
+    so <- run_sleuth_prep(sample_info, max_bootstrap = max_bootstrap,
+      filter_target_id = filter_target_id, ...)
   }
   so <- sleuth_wt(so, 'conditionB')
   so <- sleuth_fit(so, ~ 1, 'reduced')
@@ -556,9 +564,12 @@ rename_target_id <- function(df, as_gene = FALSE) {
 }
 
 ## NEW METHOD: Run ALDEx2
-runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, test = "t", statistic = "welch") {
+runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, test = "t", statistic = "welch", filter = NULL) {
   mode(counts) <- "integer"
   counts_mat <- as.data.frame(counts)
+  if(!is.null(filter)) {
+    counts_mat <- counts_mat[filter, ]
+  }
   x <- ALDEx2::aldex.clr(reads = counts_mat, conds = conditions, mc.samples = 128, denom = denom,
                  verbose = TRUE)
   if (test == "t") {
