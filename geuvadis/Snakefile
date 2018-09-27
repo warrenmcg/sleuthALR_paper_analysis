@@ -250,11 +250,12 @@ rule salmon:
 
 rule prep_fish:
     input:
-        'sims/{sim}/{exp}/{id}/salmon/quant.sf'
+        expand('sims/{{sim}}/{{exp}}/{id}/salmon/quant.sf', id = SIM_IDS)
     output:
-        'sims/{sim}/{exp}/{id}/salmon/abundance.h5'
+        expand('sims/{{sim}}/{{exp}}/{id}/salmon/abundance.h5', id = SIM_IDS)
+    threads: 1
     shell:
-        source_r('R', 'prep_fish.R') + ' {wildcards.sim} {wildcards.exp}'
+        source_r('R', 'prep_fish.R') + ' {wildcards.sim} {wildcards.exp} "salmon"'
 
 def get_simulation_info(experiment_string):
     mode, a, b, n, seed, sf = experiment_string.split('_')
