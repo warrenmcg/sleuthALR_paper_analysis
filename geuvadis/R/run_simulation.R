@@ -1,4 +1,8 @@
 .libPaths(c("~/R_library", .libPaths()))
+library(polyester)
+library(sleuth)
+library(absSimSeq)
+
 fasta_file <- '../../annotation/Homo_sapiens.gencode.v25.fa'
 sleuth_file <- '../results/finn_sleuth.rds'
 outdir <- '../sims/isoform_5_5_15_387_1'
@@ -38,7 +42,7 @@ de_type <- 'normal'
 # Group A -- "few changes" (intended to match assumptions made by previous normalization methods)
 # Group B -- "many changes down" (intended to violate assumptions made by previous methods)
 # Group C -- "many changes up" (intended to violate assumptions made by previous methods)
-# Note: Groups B and C have the same probability
+# Note: Groups B and C have the same probability for differential expression (20% of all transcripts)
 ###
 de_probs <- c(rep(0.05, 5), rep(0.20, 10))
 
@@ -60,8 +64,6 @@ mean_lib_size <- 30*10^6
 seed <- 645175
 
 ### Launching the actual full simulation
-# On our machine, we need to use 8 cores because of the memory demands
-# 8 cores consumes about 100-110 GB of RAM (out of 128 on our machine)
 final_results <- absSimSeq::run_abs_simulation(fasta_file, sleuth_file, sample_index,
                                                outdir = outdir, denom = denom,
                                                num_runs = num_runs, num_reps = num_reps,
@@ -69,7 +71,7 @@ final_results <- absSimSeq::run_abs_simulation(fasta_file, sleuth_file, sample_i
                                                de_type = de_type, mean_lib_size = mean_lib_size,
                                                de_probs = de_probs, dir_probs = dir_probs,
                                                polyester_sim = T, gc_bias = gc_bias,
-                                               sleuth_save = T, num_cores = 8)
+                                               sleuth_save = T, num_cores = num_runs)
 
 oracles <- absSimSeq::extract_oracles(final_results)
 
