@@ -1,3 +1,4 @@
+.libPaths(c("~/R_library", .libPaths()))
 args <- commandArgs(trailing = TRUE)
 
 if (length(args) != 1) {
@@ -36,7 +37,6 @@ transcript_gene_mapping <- dplyr::mutate(transcript_gene_mapping,
 ###
 # loading featureCounts data
 ###
-
 training_sets <- lapply(training_sets,
   function(df) {
     df$featureCounts <- file.path('..', 'results', 'single', df$sample,
@@ -81,6 +81,7 @@ dummy_filter_df <- data.frame(target_id = names(dummy_filter),
 
 all_validation <- list()
 
+message(paste("running sleuth", Sys.time()))
 sleuth_validation <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
@@ -90,6 +91,18 @@ sleuth_validation <- mclapply(seq_along(validation_sets),
 all_validation$sleuth.lrt <- lapply(sleuth_validation, '[[', 'sleuth.lrt')
 all_validation$sleuth.wt <- lapply(sleuth_validation, '[[', 'sleuth.wt')
 
+message(paste("running sleuth-ALR", Sys.time()))
+denom <- "ENSMUSG00000038014.7"
+alr_res <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    run_alr(validation, denom = denom, num_cores = 1, gene_column = 'ens_gene')
+    list(sleuthALR.lrt = sir$sleuth.lrt, sleuthALR.wt = sir$sleuth.wt)
+  })
+all_validation$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
+all_validation$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
+
+message(paste("running DESeq2", Sys.time()))
 all_validation$DESeq2 <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
@@ -97,6 +110,7 @@ all_validation$DESeq2 <- mclapply(seq_along(validation_sets),
     DESeq2_filter_and_run_intersect(obs, validation, dummy_filter)$result
   })
 
+message(paste("running edgeR", Sys.time()))
 edgeR_results <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
@@ -115,6 +129,7 @@ edgeR_filter_validation <- lapply(edgeR_filter_validation,
     y
   })
 
+message(paste("running limma", Sys.time()))
 all_validation$limmaVoom <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
@@ -123,6 +138,20 @@ all_validation$limmaVoom <- mclapply(seq_along(validation_sets),
     limma_filter_and_run(obs, validation, current_filter)$result
   })
 
+message(paste("running ALDEx2-filtered with IQLR", Sys.time()))
+all_validation$ALDEx2.filt <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- validation_counts[[i]]
+    current_filter <- edgeR_filter_validation[[i]]
+    aldex2_filter_and_run(obs, 'iqlr', validation, current_filter, "all")
+  })
+all_validation$ALDEx2.filt.welch <- lapply(all_validation$ALDEx2.filt, '[[', 'ALDEx2.welch')
+all_validation$ALDEx2.filt.wilcoxon <- lapply(all_validation$ALDEx2.filt, '[[', 'ALDEx2.wilcoxon')
+all_validation$ALDEx2.filt.overlap <- lapply(all_validation$ALDEx2.filt, '[[', 'ALDEx2.overlap')
+all_validation$ALDEx2.filt <- NULL
+
+message(paste('Adding truth column', Sys.time()))
 all_validation <- lapply(all_validation,
   function(validation) {
     lapply(validation,
@@ -137,6 +166,7 @@ all_validation <- lapply(all_validation,
 
 all_training <- list()
 
+message(paste("running sleuth on training sets", Sys.time()))
 sleuth_training <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -146,6 +176,17 @@ sleuth_training <- mclapply(seq_along(training_sets),
 all_training$sleuth.lrt <- lapply(sleuth_training, '[[', 'sleuth.lrt')
 all_training$sleuth.wt <- lapply(sleuth_training, '[[', 'sleuth.wt')
 
+message(paste("running sleuth-ALR on training sets", Sys.time()))
+alr_res <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    run_alr(training, denom = denom, num_cores = 1, gene_column = 'ens_gene')
+    list(sleuthALR.lrt = sir$sleuth.lrt, sleuthALR.wt = sir$sleuth.wt)
+  })
+all_training$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
+all_training$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
+
+message(paste("running DESeq2 on training sets", Sys.time()))
 all_training$DESeq2 <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -153,6 +194,7 @@ all_training$DESeq2 <- mclapply(seq_along(training_sets),
     DESeq2_filter_and_run_intersect(obs, training, dummy_filter)$result
   })
 
+message(paste("running edgeR on training sets", Sys.time()))
 edgeR_training <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -171,6 +213,7 @@ edgeR_filter_training <- lapply(edgeR_filter_training,
     y
   })
 
+message(paste("running limma on training sets", Sys.time()))
 all_training$limmaVoom <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -179,6 +222,20 @@ all_training$limmaVoom <- mclapply(seq_along(training_sets),
     limma_filter_and_run(obs, training, current_filter)$result
   })
 
+message(paste("running ALDEx2-filtered with IQLR on training sets", Sys.time()))
+all_training$ALDEx2.filt <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- training_counts[[i]]
+    current_filter <- edgeR_filter_training[[i]]
+    aldex2_filter_and_run(obs, 'iqlr', training, current_filter, "all")
+  })
+all_training$ALDEx2.filt.welch <- lapply(all_training$ALDEx2.filt, '[[', 'ALDEx2.welch')
+all_training$ALDEx2.filt.wilcoxon <- lapply(all_training$ALDEx2.filt, '[[', 'ALDEx2.wilcoxon')
+all_training$ALDEx2.filt.overlap <- lapply(all_training$ALDEx2.filt, '[[', 'ALDEx2.overlap')
+all_training$ALDEx2.filt <- NULL
+
+message(paste("combining validation and training sets", Sys.time()))
 self_benchmark <- lapply(seq_along(all_training),
   function(i) {
     method <- names(all_training)[[i]]
@@ -188,6 +245,7 @@ self_benchmark <- lapply(seq_along(all_training),
       function(x, y) new_de_benchmark(list(x), method, y),
       training, validation)
   })
+message("saving the benchmarks")
 names(self_benchmark) <- names(all_training)
 
 self_fdr <- lapply(self_benchmark, average_sensitivity_specificity)
