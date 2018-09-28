@@ -200,10 +200,20 @@ rule make_simulation:
         'results/finn_sleuth.rds'
     output:
         'results/polyester_ground_truth.RData',
-        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+        expand('sims/{sim}/{exp}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
                exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
     shell:
         source_r('R', 'run_simulation.R')
+ 
+rule move_files:
+    input:
+        expand('sims/{sim}/{exp}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
+    output:
+        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+               exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
+    shell:
+        source_r('R', 'move_sim_files.R') + ' ../sims/isoform_5_5_15_387_1'
 
 def sim_sample_input(wildcards):
     sim = wildcards['sim']
