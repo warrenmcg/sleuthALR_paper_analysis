@@ -204,12 +204,15 @@ rule make_simulation:
     shell:
         source_r('R', 'run_simulation.R')
 
+def sim_sample_input(wildcards):
+    sim = wildcards['sim']
+    exp = wildcards['exp']
+    id = wildcards['id']
+    return expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = sim, exp = exp, id = id, i = [1, 2])
+
 rule kallisto:
     input:
-        expand('sims/{sim}/{exp}/{id}/{id}_1.fasta.gz', sim = 'isoform_5_5_15_387_1',
-               exp = SIM_NAMES, id = SIM_IDS),
-        expand('sims/{sim}/{exp}/{id}/{id}_2.fasta.gz', sim = 'isoform_5_5_15_387_1',
-               exp = SIM_NAMES, id = SIM_IDS)
+        sim_sample_input
     output:
         'sims/{sim}/{exp}/{id}/kallisto',
         'sims/{sim}/{exp}/{id}/kallisto/abundance.h5'
@@ -227,10 +230,7 @@ rule kallisto:
 
 rule salmon:
     input:
-        expand('sims/{sim}/{exp}/{id}/{id}_1.fasta.gz', sim = 'isoform_5_5_15_387_1',
-               exp = SIM_NAMES, id = SIM_IDS),
-        expand('sims/{sim}/{exp}/{id}/{id}_2.fasta.gz', sim = 'isoform_5_5_15_387_1',
-               exp = SIM_NAMES, id = SIM_IDS)
+        sim_sample_input
     output:
         'sims/{sim}/{exp}/{id}/salmon/',
         'sims/{sim}/{exp}/{id}/salmon/quant.sf'
