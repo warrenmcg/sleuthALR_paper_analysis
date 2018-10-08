@@ -56,7 +56,7 @@ all_results_kal$sleuthALR.lrt <- lapply(sleuth_res, '[[', 'sleuthALR.lrt')
 all_results_kal$sleuthALR.wt <- lapply(sleuth_res, '[[', 'sleuthALR.wt')
 rm(alr_res)
 
-message(paste('running sleuth-ALR', Sys.time()))
+message(paste('running ALDEx2', Sys.time()))
 aldex2_res <- mclapply(1:N_SIM,
   function(i) {
     cat('Run: ', i, '\n')
