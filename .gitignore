@@ -8,6 +8,7 @@
 *.RData
 
 annotation/
+index/
 orig_sim/
 software/
 
@@ -20,6 +21,10 @@ geuvadis/results
 geuvadis/sims
 geuvadis/tmp
 geuvadis/img
+
+marguerat/results
+marguerat/abs_counts
+marguerat/metadata
 
 # do not ignore these files
 !*Snakefile
