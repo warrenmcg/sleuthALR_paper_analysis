@@ -42,8 +42,6 @@ rule all:
 
         # used for null experiment
         expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES),
-        expand('results/finn_samples/{id}/hisat.bam', id = FINN_SAMPLES),
-        expand('results/finn_samples/{id}/featureCounts.txt', id = FINN_SAMPLES),
         'results/null_resampling_fdr_report.html',
 
         # do a large experiment so that we can do permutations
@@ -104,74 +102,18 @@ rule prep_null_resampling:
     shell:
         source_r('R', 'resampling_fdr.R')
 
-rule finn_hisat_alignment:
-    input:
-        finn_sample_input
-    output:
-        'results/finn_samples/{id}/hisat.bam'
-    threads: 10
-    benchmark:
-        'benchmark/finn_samples/{id}/hisat/benchmark.json'
-    shell:
-        '{UPDATED_PATH}'
-        ' hisat2'
-        ' -x {HISAT_INDEX}'
-        ' -1 {input[0]}'
-        ' -2 {input[1]}'
-        ' --dta-cufflinks'
-        ' -p {threads}'
-        ' | '
-        '{UPDATED_PATH} samtools view -Sb -'
-        ' > '
-        '{output}.unsorted'
-        ' && '
-        '{UPDATED_PATH} samtools sort'
-        ' -o {output}'
-        ' {output}.unsorted'
-        ' && '
-        'rm {output}.unsorted'
-
-rule finn_featureCounts:
-    input:
-        'results/finn_samples/{id}/hisat.bam'
-    output:
-        'results/finn_samples/{id}/featureCounts.txt'
-    benchmark:
-        'benchmark/finn_samples/{id}/featureCounts/benchmark.json'
-    threads: 2
-    shell:
-        '{UPDATED_PATH} '
-        'featureCounts '
-        ' -a {TRANSCRIPTOME_GTF}'
-        ' -o {output}'
-        ' -T {threads}'
-        ' -p'
-        ' {input}'
-
 rule null_resampling_isoform:
     input:
-        expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES),
-        expand('results/finn_samples/{id}/featureCounts.txt', id = FINN_SAMPLES)
+        expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES)
     output:
         'results/null_resampling/isoform.rds'
     threads: 20
     shell:
         source_r('R', 'null_resampling_fdr_isoform.R') + ' {threads}'
 
-rule null_resampling_gene:
-    input:
-        expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES),
-        expand('results/finn_samples/{id}/featureCounts.txt', id = FINN_SAMPLES)
-    output:
-        'results/null_resampling/gene.rds'
-    threads: 20
-    shell:
-        source_r('R', 'null_resampling_fdr_gene.R') + ' {threads}'
-
 rule null_resampling_fdr_report:
     input:
-        'results/null_resampling/isoform.rds',
-        'results/null_resampling/gene.rds',
+        'results/null_resampling/isoform.rds'
     output:
         'results/null_resampling_fdr_report.html'
     shell:
