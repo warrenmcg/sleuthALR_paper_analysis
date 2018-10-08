@@ -19,6 +19,7 @@ source("gene_common.R")
 
 library("parallel")
 library("mamabear")
+library("absSimSeq")
 options(mc.cores = n_cpu)
 
 transcript_gene_mapping <- get_human_gene_names()
@@ -63,7 +64,10 @@ obs_counts <- lapply(sleuth_res, '[[', 'counts')
 rm(sleuth_res)
 
 message(paste('running sleuth-ALR', Sys.time()))
-denoms <- 'ENST00000377532.7'
+data('ERCC92_data', package = "absSimSeq")
+log_means <- log2(rowMeans(ERCC92_data[,c(4:5)]))
+denoms <- names(log_means[log_means > 3])
+denoms <- gsub('_', '-', denoms)
 
 alr_res <- mclapply(1:N_SIM,
   function(i) {
