@@ -32,26 +32,47 @@ all_results_kal <- list()
 N_SIM <- 15
 GROUP_BREAKS <- c(5, 10)
 
+sim <- parse_simulation(sim_name)
+
+sample_info <- lapply(1:N_SIM,
+  function(i) {
+    n <- sim$a + sim$b
+    num <- sprintf('%02d', i)
+    sample_nums <- sprintf('%02d', 1:n)
+    kal_dirs <- file.path('..', 'sims', sim_name, paste0("run", num),
+      paste0("sample_", sample_nums), "kallisto")
+    get_sample_to_condition(sim$a, sim$b, kal_dirs)
+  })
+
 message(paste('running sleuth', Sys.time()))
 sleuth_res <- mclapply(1:N_SIM,
   function(i) {
     cat('Run: ', i, '\n')
-    sir <- load_isoform_results_intersect(sim_name, i, 'kallisto', 'sleuth',
-      run_sleuth)
-    list(sleuth.lrt = sir$sleuth.lrt, sleuth.wt = sir$sleuth.wt)
-  })
+    si <- sample_info[[i]]
+    so <- run_sleuth_prep(si, num_cores = 1, normalize = FALSE)
+    sir <-  list(so = so)
+    filter <- sir$so$filter_bool
+    counts <- sleuth::sleuth_to_matrix(sir$so, "obs_raw", "est_counts")
+    list(sleuth.lrt = sir$sleuth.lrt, sleuth.wt = sir$sleuth.wt, filter = filter,
+         counts = counts)
+  }, mc.cores = n_cpu)
 all_results_kal$sleuth.lrt <- lapply(sleuth_res, '[[', 'sleuth.lrt')
 all_results_kal$sleuth.wt <- lapply(sleuth_res, '[[', 'sleuth.wt')
+sleuth_filters <- lapply(sleuth_res, '[[', 'filter')
+obs_counts <- lapply(sleuth_res, '[[', 'counts')
 rm(sleuth_res)
 
 message(paste('running sleuth-ALR', Sys.time()))
+denoms <- 'ENST00000377532.7'
+
 alr_res <- mclapply(1:N_SIM,
   function(i) {
     cat('Run: ', i, '\n')
-    alr <- load_isoform_results_intersect(sim_name, i, 'kallisto', 'sleuthALR',
-      run_alr, denom = 'ENST00000466430.5')
+    si <- sample_info[[i]]
+    alr <- run_alr(si, max_bootstrap = 100, denom = denoms, delta = 0.01,
+                   num_cores = 1, which_var = "obs_tpm")
     list(sleuthALR.lrt = alr$sleuthALR.lrt, sleuthALR.wt = alr$sleuthALR.wt)
-  })
+  }, mc.cores = n_cpu)
 all_results_kal$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
 all_results_kal$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
 rm(alr_res)
@@ -60,41 +81,64 @@ message(paste('running ALDEx2', Sys.time()))
 aldex2_res <- mclapply(1:N_SIM,
   function(i) {
     cat('Run: ', i, '\n')
-    aldex2 <- load_isoform_results_intersect(sim_name, i, 'kallisto', 'ALDEx2',
-      aldex2_filter_and_run, denom = 'ENST00000466430.5')
-    list(ALDEx2.overlap = aldex2$ALDEx2.overlap,
-         ALDEx2.welch = aldex2$ALDEx2.welch,
-         ALDEx2.wilcoxon = aldex2$ALDEx2.wilcoxon)
-  })
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    filter <- sleuth_filters[[i]]
+    aldex2 <- runALDEx2(counts, si$condition, denom = 'iqlr', FALSE, 't', 'all', filter)
+    list(ALDEx2.overlap = aldex2$overlap,
+         ALDEx2.welch = aldex2$welch,
+         ALDEx2.wilcoxon = aldex2$wilcoxon)
+  }, mc.cores = 5)
 all_results_kal$ALDEx2.overlap <- lapply(aldex2_res, '[[', 'ALDEx2.overlap')
 all_results_kal$ALDEx2.welch <- lapply(aldex2_res, '[[', 'ALDEx2.welch')
 all_results_kal$ALDEx2.wilcoxon <- lapply(aldex2_res, '[[', 'ALDEx2.wilcoxon')
+rm(aldex2_res)
 
 message(paste('running limma', Sys.time()))
 all_results_kal$limmaVoom <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'kallisto',
-      'limmaVoom', limma_filter_and_run)$limmaVoom
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    filt_counts <- counts[filter, ]
+    cds <-  make_count_data_set(counts[filter, ], si)
+    runVoom(cds, FALSE, FALSE)
   }, mc.cores = n_cpu)
 
 message(paste('running DESeq2', Sys.time()))
 all_results_kal$DESeq2 <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'kallisto',
-      'DESeq2', DESeq2_filter_and_run_intersect)$DESeq2
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    cds <- make_count_data_set(counts[filter, ], si)
+    runDESeq2(cds, FALSE, FALSE, TRUE)$results
   }, mc.cores = n_cpu)
 
 message(paste('running edgeR', Sys.time()))
 all_results_kal$edgeR <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
-    load_isoform_results_intersect(sim_name, i, 'kallisto',
-       'edgeR', edgeR_filter_and_run)$edgeR
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    cds <- make_count_data_set(counts[filter, ], si)
+    design <- NULL
+    runEdgeR(cds, FALSE, FALSE, TRUE, design)
   }, mc.cores = n_cpu)
 
 message(paste('getting benchmarks', Sys.time()))
+saveRDS(all_results_kal, file = file.path('../results', sim_name, 'all_kal_results.rds'))
+all_results_kal <- absSimSeq::rename_fc_list(all_results_kal)
+saveRDS(all_results_kal, file = file.path('../results', sim_name, 'all_kal_fc_results.rds'))
 oracles <- readRDS('../sims/polyester_oracles.rds')
 all_kal_benchmarks <- lapply(seq_along(all_results_kal),
   function(i) {
@@ -108,8 +152,11 @@ all_kal_benchmarks <- lapply(seq_along(all_results_kal),
         } else {
           oracle <- oracles$main_oracle[[j]]
         }
-        new_de_benchmark(x, method_name, oracle, de_colors = full_method_colors[method_name],
-                         de_linetypes = method_kal_ltys[method_name])
+        filter <- sleuth_filters[[j]]
+        filt_oracle <- oracle[which(oracle$target_id %in% names(filter[filter])), ]
+        fold_change <- FALSE
+        new_de_benchmark(x, method_name, filt_oracle, de_colors = full_method_colors[method_name],
+                         de_linetypes = method_kal_ltys[method_name], fold_change = fold_change)
       }, mc.cores = n_cpu)
   })
 names(all_kal_benchmarks) <- names(all_results_kal)
