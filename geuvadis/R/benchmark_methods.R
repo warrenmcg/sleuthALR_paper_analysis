@@ -451,8 +451,6 @@ run_sleuth_prep <- function(sample_info, max_bootstrap = 30, gene_column = NULL,
   so <- sleuth_prep(sample_info, ~ condition, max_bootstrap = max_bootstrap,
     target_mapping = transcript_gene_mapping, filter_target_id = filter_target_id,
     ...)
-  so <- sleuth_fit(so)
-
   so
 }
 
@@ -462,6 +460,9 @@ run_alr <- function(sample_info,
   gene_column = NULL,
   denom = NULL,
   filter_target_id = NULL,
+  delta = NULL,
+  impute_proportion = 0.65,
+  which_var = 'obs_tpm',
   ...) {
   so <- sleuthALR::make_lr_sleuth_object(sample_info,
     target_mapping = transcript_gene_mapping,
@@ -469,12 +470,23 @@ run_alr <- function(sample_info,
     denom_name = denom, aggregate_column = gene_column,
     max_bootstrap = max_bootstrap,
     filter_target_id = filter_target_id,
+    delta = delta,
+    impute_proportion = impute_proportion,
+    run_models = FALSE,
     ...)
+
+  so <- sleuth_fit(so, so$full_formula, 'full', which_var = which_var, shrink_fun = shrink_fun)
+  so <- sleuth_wt(so, 'conditionB')
+  so <- sleuth_fit(so, ~ 1, 'reduced', which_var = which_var, shrink_fun = shrink_fun)
+  so <- sleuth_lrt(so, 'reduced', 'full')
+
+  denom_names <- sleuthALR::get_denom_names(so)
+
   lrt <- sleuth_results(so, 'reduced:full', test_type = 'lrt',
-    show_all = FALSE)[, c('target_id', 'pval', 'qval')]
+    show_all = FALSE)[, c('target_id', 'pval', 'qval', 'test_stat')]
   wt <- sleuth_results(so, 'conditionB',
-    show_all = FALSE)[, c('target_id', 'pval', 'qval')]
-  res <- list(sleuthALR.lrt = lrt, sleuthALR.wt = wt)
+    show_all = FALSE)[, c('target_id', 'pval', 'qval', 'b')]
+  res <- list(sleuthALR.lrt = lrt, sleuthALR.wt = wt, denoms = denom_names, so = so)
   res
 }
 
@@ -495,6 +507,8 @@ run_sleuth <- function(sample_info,
     so <- run_sleuth_prep(sample_info, max_bootstrap = max_bootstrap,
       filter_target_id = filter_target_id, ...)
   }
+
+  so <- sleuth_fit(so, so$full_formula, 'full')
   so <- sleuth_wt(so, 'conditionB')
   so <- sleuth_fit(so, ~ 1, 'reduced')
   so <- sleuth_lrt(so, 'reduced', 'full')
@@ -502,27 +516,25 @@ run_sleuth <- function(sample_info,
   res <- NULL
   if (is.null(gene_mode)) {
     lrt <- sleuth_results(so, 'reduced:full', test_type = 'lrt',
-      show_all = FALSE)[, c('target_id', 'pval', 'qval')]
+      show_all = FALSE)[, c('target_id', 'pval', 'qval', 'test_stat')]
     wt <- sleuth_results(so, 'conditionB',
-      show_all = FALSE)[, c('target_id', 'pval', 'qval')]
-    res <- list(sleuth.lrt = lrt, sleuth.wt = wt)
+      show_all = FALSE)[, c('target_id', 'pval', 'qval', 'b')]
   } else if (gene_mode == 'lift') {
     # test every isoform
     lrt <- get_gene_lift(so, 'reduced:full', test_type = 'lrt')
     wt <- get_gene_lift(so, 'conditionB', test_type = 'wt')
-    res <- list(sleuth.lrt = lrt, sleuth.wt = wt)
   } else if (gene_mode == 'aggregate') {
     lrt <- sleuth_results(so, 'reduced:full', test_type = 'lrt',
-      show_all = FALSE)[, c('target_id', 'pval', 'qval')]
+      show_all = FALSE)[, c('target_id', 'pval', 'qval', 'test_stat')]
     wt <- sleuth_results(so, 'conditionB',
-      show_all = FALSE)[, c('target_id', 'pval', 'qval')]
-    res <- list(sleuth.lrt = lrt, sleuth.wt = wt)
+      show_all = FALSE)[, c('target_id', 'pval', 'qval', 'b')]
   } else {
     stop('Unrecognized mode for "run_sleuth"')
   }
 
   res$so <- so
 
+  res <- list(sleuth.lrt = lrt, sleuth.wt = wt)
   res
 }
 
