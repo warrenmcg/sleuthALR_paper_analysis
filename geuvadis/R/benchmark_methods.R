@@ -579,6 +579,7 @@ rename_target_id <- function(df, as_gene = FALSE) {
 runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, test = "t", statistic = "welch", filter = NULL) {
   mode(counts) <- "integer"
   counts_mat <- as.data.frame(counts)
+  conditions <- as.character(conditions) # new for ALDEx2 v. 1.10
   if(!is.null(filter)) {
     counts_mat <- counts_mat[filter, ]
   }
