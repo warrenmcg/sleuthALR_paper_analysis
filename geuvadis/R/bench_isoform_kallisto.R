@@ -52,8 +52,8 @@ alr_res <- mclapply(1:N_SIM,
       run_alr, denom = 'ENST00000466430.5')
     list(sleuthALR.lrt = alr$sleuthALR.lrt, sleuthALR.wt = alr$sleuthALR.wt)
   })
-all_results_kal$sleuthALR.lrt <- lapply(sleuth_res, '[[', 'sleuthALR.lrt')
-all_results_kal$sleuthALR.wt <- lapply(sleuth_res, '[[', 'sleuthALR.wt')
+all_results_kal$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
+all_results_kal$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
 rm(alr_res)
 
 message(paste('running ALDEx2', Sys.time()))
