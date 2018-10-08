@@ -226,7 +226,7 @@ rule kallisto:
     shell:
         '{UPDATED_PATH} '
         'kallisto quant'
-        ' -i {KALLISTO_INDEX}'
+        ' -i {KALLISTO_SPIKEIN_INDEX}'
         ' -b 100'
         ' --bias'
         ' -o {output[0]}'

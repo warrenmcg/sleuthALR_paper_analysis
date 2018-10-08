@@ -55,12 +55,15 @@ SIM_IDS = ['sample_' + format(i, '02d') for i in range(1,11)]
 TRANSCRIPTOME_NAME = 'Homo_sapiens.gencode.v25'
 TRANSCRIPTOME_FA = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.fa'
 TRANSCRIPTOME_GTF = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.gtf'
+SPIKEIN_FA = BASE + '/annotation/' + TRANSCRIPTOME_NAME + '.andErcc92.fa'
 
 # NOTE: bowtie creates files with this prefix
 BOWTIE_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME
 
 KALLISTO_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME + '.kidx'
 SALMON_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME + '.sidx'
+KALLISTO_SPIKEIN_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME + '.andErcc92.kidx'
+SALMON_SPIKEIN_INDEX = BASE + '/index/' + TRANSCRIPTOME_NAME + '.andErcc92.sidx'
 
 GENOME_NAME = 'Homo_sapiens.GRCh38.dna.primary_assembly.rel87'
 GENOME_FA = BASE + '/annotation/' + GENOME_NAME + '.fa'
@@ -94,6 +97,8 @@ YEAST_TRANSCRIPTOME_FA = BASE + '/annotation/' + YEAST_NAME + '.fa'
 
 YEAST_KALLISTO_INDEX = BASE + '/index/' + YEAST_NAME + '.kidx'
 YEAST_SALMON_INDEX = BASE + '/index/' + YEAST_NAME + '.sidx'
+
+ERCC_FILE = 'ERCC92_data.txt'
 
 ###
 # functions

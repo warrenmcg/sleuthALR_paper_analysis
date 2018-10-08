@@ -28,7 +28,12 @@ rule all:
         YEAST_ANNOS,
         YEAST_TRANSCRIPTOME_FA,
         YEAST_KALLISTO_INDEX,
-        YEAST_SALMON_INDEX
+        YEAST_SALMON_INDEX,
+
+        ###
+        # spike-ins
+        ###
+        ERCC_FILE
 
 rule get_transcriptome:
     output:
@@ -95,6 +100,32 @@ rule salmon_index:
         N_THREADS
     output:
         SALMON_INDEX
+    shell:
+        '{UPDATED_PATH} '
+        'salmon index'
+        ' -i {output}'
+        ' -p {threads}'
+        ' --keepDuplicates'
+        ' -t {input}'
+
+rule kal_spikein_index:
+    input:
+        SPIKEIN_FA
+    output:
+        KALLISTO_SPIKEIN_INDEX
+    shell:
+        '{UPDATED_PATH} '
+        'kallisto index'
+        ' -i {output}'
+        ' {input}'
+
+rule sal_spikein_index:
+    input:
+        SPIKEIN_FA
+    threads:
+        N_THREADS
+    output:
+        SALMON_SPIKEIN_INDEX
     shell:
         '{UPDATED_PATH} '
         'salmon index'
@@ -233,3 +264,14 @@ rule yeast_annos:
         YEAST_ANNOS
     shell:
         source_r('R', 'make_annos.R')
+
+rule get_ercc:
+    output:
+        ERCC_FILE
+    shell:
+        'curl -o ERCC92_data.txt --silent'
+        ' https://assets.thermofisher.com/TFS-Assets/LSG/manuals/cms_095046.txt'
+        ' && '
+        'curl -o ERCC92.zip --silent'
+        ' https://assets.thermofisher.com/TFS-Assets/LSG/manuals/ERCC92.zip'
+        ' && unzip ERCC92.zip && rm ERCC92.zip'
