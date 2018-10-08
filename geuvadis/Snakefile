@@ -188,7 +188,8 @@ rule null_resampling_fdr_report:
 # differentially expressed independently.
 rule finn_sleuth:
     input:
-        'metadata/geu_meta.RData'
+        'metadata/geu_meta.RData',
+        expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES)
     output:
         'results/finn_sleuth.rds'
     shell:
