@@ -56,6 +56,9 @@ rule all:
         expand('results/{sim}/small_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/down_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/up_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/small_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/down_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
+        expand('results/{sim}/up_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
         expand('results/{sim}/benchmark_report.html', sim = 'isoform_5_5_15_387_1')
 
 def finn_sample_input(wildcards):
