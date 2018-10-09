@@ -7,7 +7,7 @@ if (length(args) != 1) {
 
 cores <- 20
 
-cores <- args[1]
+#cores <- args[1]
 
 # This file creates a reference for each method on the complete data set
 # at the GENE level.
@@ -27,12 +27,6 @@ options(mc.cores = cores)
 source('get_metadata.R')
 
 transcript_gene_mapping <- get_mouse_gene_names()
-
-# this is a temporary fix
-transcript_gene_mapping <- dplyr::mutate(transcript_gene_mapping,
-  target_id_backup = target_id)
-transcript_gene_mapping <- dplyr::mutate(transcript_gene_mapping,
-  target_id = ensembl_transcript_id)
 
 ###
 # loading featureCounts data
@@ -85,7 +79,7 @@ message(paste("running sleuth", Sys.time()))
 sleuth_validation <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
-    sir <- run_sleuth(validation, gene_mode = 'aggregate', gene_column = 'ens_gene')
+    sir <- run_sleuth(validation, gene_mode = 'aggregate', gene_column = 'ens_gene', num_cores = 1)
     list(sleuth.lrt = sir$sleuth.lrt, sleuth.wt = sir$sleuth.wt)
   })
 all_validation$sleuth.lrt <- lapply(sleuth_validation, '[[', 'sleuth.lrt')
@@ -96,18 +90,34 @@ denom <- "ENSMUSG00000038014.7"
 alr_res <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
-    run_alr(validation, denom = denom, num_cores = 1, gene_column = 'ens_gene')
+    run_alr(validation, denom = denom, num_cores = 1, gene_column = "ens_gene", delta = 0.01)
     list(sleuthALR.lrt = sir$sleuth.lrt, sleuthALR.wt = sir$sleuth.wt)
   })
 all_validation$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
 all_validation$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
 
 message(paste("running DESeq2", Sys.time()))
-all_validation$DESeq2 <- mclapply(seq_along(validation_sets),
+all_validation$DESeq2_old <- mclapply(seq_along(validation_sets),
   function(i) {
     validation <- validation_sets[[i]]
     obs <- validation_counts[[i]]
     DESeq2_filter_and_run_intersect(obs, validation, dummy_filter)$result
+  })
+
+message(paste("running DESeq2 with denom", Sys.time()))
+all_validation$DESeq2 <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- validation_counts[[i]]
+    DESeq2_filter_and_run_intersect(obs, validation, dummy_filter, denom = denom)$result
+  })
+
+message(paste("running DESeq2 with RUVg", Sys.time()))
+all_validation$DESeq2_RUVg <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- validation_counts[[i]]
+    DESeq2_filter_and_run_intersect(obs, validation, dummy_filter, denom = denom, RUVg = TRUE)$result
   })
 
 message(paste("running edgeR", Sys.time()))
@@ -118,7 +128,23 @@ edgeR_results <- mclapply(seq_along(validation_sets),
     edgeR_filter_and_run(obs, validation, dummy_filter)
   })
 edgeR_filter_validation <- lapply(edgeR_results, '[[', 'filter')
-all_validation$edgeR <- lapply(edgeR_results, '[[', 'result')
+all_validation$edgeR_old <- lapply(edgeR_results, '[[', 'result')
+
+message(paste("running edgeR with denom", Sys.time()))
+all_validation$edgeR <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- validation_counts[[i]]
+    edgeR_filter_and_run(obs, validation, dummy_filter, denom = denom)$result
+  })
+
+message(paste("running edgeR with RUVg", Sys.time()))
+all_validation$edgeR_RUVg <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- validation_counts[[i]]
+    edgeR_filter_and_run(obs, validation, dummy_filter, denom = denom, RUVg = TRUE)$result
+  })
 
 # use edgeR as the filter for limmaVoom and EBSeq
 edgeR_filter_validation <- lapply(edgeR_filter_validation,
@@ -135,7 +161,7 @@ all_validation$limmaVoom <- mclapply(seq_along(validation_sets),
     validation <- validation_sets[[i]]
     obs <- validation_counts[[i]]
     current_filter <- edgeR_filter_validation[[i]]
-    limma_filter_and_run(obs, validation, current_filter)$result
+    limma_filter_and_run(obs, validation, current_filter, denom = denom)$result
   })
 
 message(paste("running ALDEx2-filtered with IQLR", Sys.time()))
@@ -170,7 +196,7 @@ message(paste("running sleuth on training sets", Sys.time()))
 sleuth_training <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
-    sir <- run_sleuth(training, gene_mode = 'aggregate', gene_column = 'ens_gene')
+    sir <- run_sleuth(training, gene_mode = 'aggregate', gene_column = 'ens_gene', num_cores = 1)
     list(sleuth.lrt = sir$sleuth.lrt, sleuth.wt = sir$sleuth.wt)
   })
 all_training$sleuth.lrt <- lapply(sleuth_training, '[[', 'sleuth.lrt')
@@ -180,18 +206,34 @@ message(paste("running sleuth-ALR on training sets", Sys.time()))
 alr_res <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
-    run_alr(training, denom = denom, num_cores = 1, gene_column = 'ens_gene')
+    run_alr(training, denom = denom, num_cores = 1, gene_column = 'ens_gene', delta = 0.01)
     list(sleuthALR.lrt = sir$sleuth.lrt, sleuthALR.wt = sir$sleuth.wt)
   })
 all_training$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
 all_training$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
 
 message(paste("running DESeq2 on training sets", Sys.time()))
-all_training$DESeq2 <- mclapply(seq_along(training_sets),
+all_training$DESeq2_old <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
     obs <- training_counts[[i]]
     DESeq2_filter_and_run_intersect(obs, training, dummy_filter)$result
+  })
+
+message(paste("running DESeq2 with denom on training sets", Sys.time()))
+all_training$DESeq2 <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- training_counts[[i]]
+    DESeq2_filter_and_run_intersect(obs, training, dummy_filter, denom = denom)$result
+  })
+
+message(paste("running DESeq2 with RUVg on training sets", Sys.time()))
+all_training$DESeq2_RUVg <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- training_counts[[i]]
+    DESeq2_filter_and_run_intersect(obs, training, dummy_filter, denom = denom, RUVg = TRUE)$result
   })
 
 message(paste("running edgeR on training sets", Sys.time()))
@@ -202,7 +244,23 @@ edgeR_training <- mclapply(seq_along(training_sets),
     edgeR_filter_and_run(obs, training, dummy_filter)
   })
 edgeR_filter_training <- lapply(edgeR_training, '[[', 'filter')
-all_training$edgeR <- lapply(edgeR_training, '[[', 'result')
+all_training$edgeR_old <- lapply(edgeR_training, '[[', 'result')
+
+message(paste("running edgeR with denom on training sets", Sys.time()))
+all_training$edgeR <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- training_counts[[i]]
+    edgeR_filter_and_run(obs, training, dummy_filter, denom = denom)$result
+  })
+
+message(paste("running edgeR with RUVg on training sets", Sys.time()))
+all_training$edgeR_RUVg <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- training_counts[[i]]
+    edgeR_filter_and_run(obs, training, dummy_filter, denom = denom, RUVg = TRUE)$result
+  })
 
 # use edgeR as the filter for limmaVoom and EBSeq
 edgeR_filter_training <- lapply(edgeR_filter_training,
@@ -250,5 +308,6 @@ names(self_benchmark) <- names(all_training)
 
 self_fdr <- lapply(self_benchmark, average_sensitivity_specificity)
 
+save(all_training, all_validation, file = '../results/gene_self_results.rda')
 saveRDS(self_benchmark, '../results/gene_self_benchmark.rds')
 saveRDS(self_fdr, '../results/gene_self_fdr.rds')

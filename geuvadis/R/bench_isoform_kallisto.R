@@ -81,8 +81,8 @@ all_results_kal$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
 all_results_kal$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
 rm(alr_res)
 
-message(paste('running ALDEx2', Sys.time()))
-aldex2_res <- mclapply(1:N_SIM,
+message(paste('running ALDEx2 iqlr', Sys.time()))
+aldex2_iqlr_res <- mclapply(1:N_SIM,
   function(i) {
     cat('Run: ', i, '\n')
     si <- sample_info[[i]]
@@ -93,10 +93,44 @@ aldex2_res <- mclapply(1:N_SIM,
          ALDEx2.welch = aldex2$welch,
          ALDEx2.wilcoxon = aldex2$wilcoxon)
   }, mc.cores = 5)
-all_results_kal$ALDEx2.overlap <- lapply(aldex2_res, '[[', 'ALDEx2.overlap')
-all_results_kal$ALDEx2.welch <- lapply(aldex2_res, '[[', 'ALDEx2.welch')
-all_results_kal$ALDEx2.wilcoxon <- lapply(aldex2_res, '[[', 'ALDEx2.wilcoxon')
-rm(aldex2_res)
+all_results_kal$ALDEx2.iqlr.overlap <- lapply(aldex2_iqlr_res, '[[', 'ALDEx2.overlap')
+all_results_kal$ALDEx2.iqlr.welch <- lapply(aldex2_iqlr_res, '[[', 'ALDEx2.welch')
+all_results_kal$ALDEx2.iqlr.wilcoxon <- lapply(aldex2_iqlr_res, '[[', 'ALDEx2.wilcoxon')
+rm(aldex2_iqlr_res)
+
+message(paste('running ALDEx2 clr', Sys.time()))
+aldex2_clr_res <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Run: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    filter <- sleuth_filters[[i]]
+    aldex2 <- runALDEx2(counts, si$condition, denom = 'all', FALSE, 't', 'all', filter)
+    list(ALDEx2.overlap = aldex2$overlap,
+         ALDEx2.welch = aldex2$welch,
+         ALDEx2.wilcoxon = aldex2$wilcoxon)
+  }, mc.cores = 5)
+all_results_kal$ALDEx2.clr.overlap <- lapply(aldex2_clr_res, '[[', 'ALDEx2.overlap')
+all_results_kal$ALDEx2.clr.welch <- lapply(aldex2_clr_res, '[[', 'ALDEx2.welch')
+all_results_kal$ALDEx2.clr.wilcoxon <- lapply(aldex2_clr_res, '[[', 'ALDEx2.wilcoxon')
+rm(aldex2_clr_res)
+
+message(paste('running ALDEx2 with spike-ins', Sys.time()))
+aldex2_denom_res <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Run: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    filter <- sleuth_filters[[i]]
+    aldex2 <- runALDEx2(counts, si$condition, denom = denoms, FALSE, 't', 'all', filter)
+    list(ALDEx2.overlap = aldex2$overlap,
+         ALDEx2.welch = aldex2$welch,
+         ALDEx2.wilcoxon = aldex2$wilcoxon)
+  }, mc.cores = 5)
+all_results_kal$ALDEx2.denom.overlap <- lapply(aldex2_denom_res, '[[', 'ALDEx2.overlap')
+all_results_kal$ALDEx2.denom.welch <- lapply(aldex2_denom_res, '[[', 'ALDEx2.welch')
+all_results_kal$ALDEx2.denom.wilcoxon <- lapply(aldex2_denom_res, '[[', 'ALDEx2.wilcoxon')
+rm(aldex2_denom_res)
 
 message(paste('running limma', Sys.time()))
 all_results_kal$limmaVoom <- mclapply(1:N_SIM,
@@ -112,6 +146,20 @@ all_results_kal$limmaVoom <- mclapply(1:N_SIM,
     runVoom(cds, FALSE, FALSE)
   }, mc.cores = n_cpu)
 
+message(paste('running limma with spike-ins', Sys.time()))
+all_results_kal$limmaVoom_denom <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    filt_counts <- counts[filter, ]
+    cds <-  make_count_data_set(counts[filter, ], si)
+    runVoom(cds, FALSE, FALSE, denom = denoms)
+  }, mc.cores = n_cpu)
+
 message(paste('running DESeq2', Sys.time()))
 all_results_kal$DESeq2 <- mclapply(1:N_SIM,
   function(i) {
@@ -123,6 +171,34 @@ all_results_kal$DESeq2 <- mclapply(1:N_SIM,
     filter <- sleuth_filters[[i]]
     cds <- make_count_data_set(counts[filter, ], si)
     runDESeq2(cds, FALSE, FALSE, TRUE)$results
+  }, mc.cores = n_cpu)
+
+message(paste('running DESeq2 with RUVg', Sys.time()))
+all_results_kal$DESeq2_RUVg <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    denom <- denoms
+    cds <- make_count_data_set(counts[filter, ], si)
+    runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom, RUVg = TRUE)$results
+  }, mc.cores = n_cpu)
+
+message(paste('running DESeq2 with spike-ins', Sys.time()))
+all_results_kal$DESeq2_denom <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    denom <- denoms
+    cds <- make_count_data_set(counts[filter, ], si)
+    runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom)$results
   }, mc.cores = n_cpu)
 
 message(paste('running edgeR', Sys.time()))
@@ -137,6 +213,36 @@ all_results_kal$edgeR <- mclapply(1:N_SIM,
     cds <- make_count_data_set(counts[filter, ], si)
     design <- NULL
     runEdgeR(cds, FALSE, FALSE, TRUE, design)
+  }, mc.cores = n_cpu)
+
+message(paste('running edgeR with RUVg', Sys.time()))
+all_results_kal$edgeR_RUVg <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    cds <- make_count_data_set(counts[filter, ], si)
+    design <- NULL
+    denom <- denoms
+    runEdgeR(cds, FALSE, FALSE, TRUE, design, denom = denom, RUVg = TRUE)
+  }, mc.cores = n_cpu)
+
+message(paste('running edgeR with spike-ins', Sys.time()))
+all_results_kal$edgeR_denom <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[[i]]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[[i]]
+    cds <- make_count_data_set(counts[filter, ], si)
+    design <- NULL
+    denom <- denoms
+    runEdgeR(cds, FALSE, FALSE, TRUE, design, denom = denom)
   }, mc.cores = n_cpu)
 
 message(paste('getting benchmarks', Sys.time()))

@@ -2,7 +2,7 @@
 # methods, usually simply by providing the "count matrix"
 
 library("data.table")
-
+library("RUVSeq")
 library("Biobase")
 library("DESeq2")
 library("edgeR")
@@ -464,12 +464,24 @@ run_alr <- function(sample_info,
   impute_proportion = 0.65,
   which_var = 'obs_tpm',
   ...) {
+
+  if (length(denom) > 1) {
+    lr_type <- 'alr'
+  } else if (denom == 'iqlr') {
+    lr_type <- 'iqlr'
+  } else if (denom == 'all' | denom == 'clr') {
+    lr_type <- 'clr'
+  } else {
+    lr_type <- 'alr'
+  }
+
   so <- sleuthALR::make_lr_sleuth_object(sample_info,
     target_mapping = transcript_gene_mapping,
     beta = 'conditionB',
     denom_name = denom, aggregate_column = gene_column,
     max_bootstrap = max_bootstrap,
     filter_target_id = filter_target_id,
+    lr_type = lr_type,
     delta = delta,
     impute_proportion = impute_proportion,
     run_models = FALSE,
@@ -583,6 +595,10 @@ runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, 
   if(!is.null(filter)) {
     counts_mat <- counts_mat[filter, ]
   }
+  if (length(denom) > 1 || !(denom %in% c('all', 'iqlr'))) {
+    denom <- which(rownames(counts_mat) %in% denom)
+    stopifnot(length(denom) > 0)
+  }
   x <- ALDEx2::aldex.clr(reads = counts_mat, conds = conditions, mc.samples = 128, denom = denom,
                  verbose = TRUE)
   if (test == "t") {
@@ -660,8 +676,8 @@ runALDEx2 <- function(counts, conditions = NULL, denom = "all", as_gene = TRUE, 
 
 # The code below is a slightly modified version of the code from `DESeq2paper`
 # http://www-huber.embl.de/DESeq2paper/
-runDESeq2 <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE) {
-
+runDESeq2 <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE, denom = NULL,
+                      RUVg = FALSE) {
   dds <- NULL
   if (is_counts) {
     dds <- DESeqDataSetFromMatrix(exprs(e), DataFrame(pData(e)), ~ condition)
@@ -674,13 +690,29 @@ runDESeq2 <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRU
     # https://www.bioconductor.org/packages/3.3/bioc/vignettes/DESeq2/inst/doc/DESeq2.pdf
     dds <- dds[ rowSums(counts(dds)) > 1, ]
   }
-  dds <- DESeq(dds,quiet=TRUE)
-  res <- results(dds)
+
+  if (!is.null(denom) && RUVg) {
+    set <- RUVSeq::RUVg(counts(dds), denom, k = 1)
+    w_vals <- as.numeric(set$W)
+    colData(dds)$W <- as.numeric(set$W)
+    design(dds) <- formula("~W+condition")
+  }
+
+  if (!is.null(denom) && !RUVg) {
+    denom_bool <- rownames(counts(dds)) %in% denom
+    stopifnot(sum(denom_bool) > 0)
+    dds <- estimateSizeFactors(dds, controlGenes = denom_bool)
+    dds <- estimateDispersions(dds, quiet = TRUE)
+    # betaPrior must be true if you do Wald and there are no interactions
+    dds <- nbinomWaldTest(dds, betaPrior = TRUE)
+  } else {
+    dds <- DESeq(dds, quiet=TRUE)
+  }
+
   beta <- res$log2FoldChange
   pvals <- res$pvalue
   padj <- res$padj
   pvals[is.na(pvals)] <- 1
-  # pvals[rowSums(exprs(e)) == 0] <- NA
   padj[is.na(padj)] <- 1
 
   rename_target_id(
@@ -690,25 +722,45 @@ runDESeq2 <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRU
     as_gene = as_gene)
 }
 
-runEdgeR <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE, design = NULL) {
+runEdgeR <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE, design = NULL, denom = NULL, RUVg = FALSE) {
   if (is_counts) {
     design <- model.matrix(~ pData(e)$condition)
     dgel <- DGEList(exprs(e))
   } else {
     dgel <- e
   }
+
   if (compute_filter) {
     # Section 2.6 in edgeR vignette
     # https://www.bioconductor.org/packages/3.3/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf
     keep <- rowSums(cpm(dgel) > 1) >= 2
     dgel <- dgel[keep, , keep.lib.sizes=FALSE]
   }
-  dgel <- calcNormFactors(dgel)
+
+  if (!is.null(denom) & RUVg) {
+    set <- RUVSeq::RUVg(exprs(e), denom, k = 1)
+    w_vals <- as.numeric(set$W)
+    pData(e)$W <- as.numeric(set$W)
+    design <- model.matrix(~W+condition, data = pData(e))
+    colnames(design)[3] <- 'pData(e)$conditionB'
+  }
+
+  if (!is.null(denom) && !RUVg) {
+    denom_bool <- rownames(dgel$counts) %in% denom
+    norm_factors <- DESeq2::estimateSizeFactorsForMatrix(dgel$counts, controlGenes = denom_bool)
+    dgel$samples$norm.factors <- norm_factors
+  } else {
+    dgel <- calcNormFactors(dgel)
+  }
   dgel <- estimateGLMCommonDisp(dgel, design)
   dgel <- estimateGLMTrendedDisp(dgel, design)
   dgel <- estimateGLMTagwiseDisp(dgel, design)
   edger.fit <- glmFit(dgel, design)
-  edger.lrt <- glmLRT(edger.fit)
+  if (!is.null(denom) && RUVg) {
+    edger.lrt <- glmLRT(edger.fit, coef = 2)
+  } else {
+    edger.lrt <- glmLRT(edger.fit)
+  }
   # predbeta <- predFC(exprs(e), design, offset=getOffset(dgel), dispersion=dgel$tagwise.dispersion)
   # predbeta10 <- predFC(exprs(e), design, prior.count=10, offset=getOffset(dgel), dispersion=dgel$tagwise.dispersion)
   predbeta <- predFC(dgel$counts, design, offset=getOffset(dgel), dispersion=dgel$tagwise.dispersion)
@@ -756,7 +808,7 @@ runEdgeRRobust <- function(e, as_gene = TRUE) {
     as_gene = as_gene)
 }
 
-runVoom <- function(e, as_gene = TRUE, compute_filter = FALSE) {
+runVoom <- function(e, as_gene = TRUE, compute_filter = FALSE, denom = NULL) {
   design <- model.matrix(~ condition, pData(e))
   dgel <- DGEList(exprs(e))
   if (compute_filter) {
@@ -765,7 +817,14 @@ runVoom <- function(e, as_gene = TRUE, compute_filter = FALSE) {
     keep <- rowSums(cpm(dgel) > 1) >= 2
     dgel <- dgel[keep, , keep.lib.sizes=FALSE]
   }
-  dgel <- calcNormFactors(dgel)
+
+  if (!is.null(denom)) {
+    denom_bool <- rownames(dgel$counts) %in% denom
+    norm_factors <- DESeq2::estimateSizeFactorsForMatrix(dgel$counts, controlGenes = denom_bool)
+    dgel$samples$norm.factors <- norm_factors
+  } else {
+    dgel <- calcNormFactors(dgel)
+  }
   v <- voom(dgel,design,plot=FALSE)
   fit <- lmFit(v,design)
   fit <- eBayes(fit)
