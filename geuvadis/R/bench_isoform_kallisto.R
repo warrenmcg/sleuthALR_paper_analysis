@@ -81,6 +81,20 @@ all_results_kal$sleuthALR.lrt <- lapply(alr_res, '[[', 'sleuthALR.lrt')
 all_results_kal$sleuthALR.wt <- lapply(alr_res, '[[', 'sleuthALR.wt')
 rm(alr_res)
 
+message(paste('running sleuth-ALR with counts', Sys.time()))
+alr_counts_res <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Run: ', i, '\n')
+    si <- sample_info[[i]]
+    alr <- run_alr(si, max_bootstrap = 100, denom = denoms, delta = 0.5,
+                   num_cores = 1, which_var = "obs_counts",
+                   method = "additive")
+    list(sleuthALR.lrt = alr$sleuthALR.lrt, sleuthALR.wt = alr$sleuthALR.wt)
+  }, mc.cores = n_cpu)
+all_results_kal$sleuthALR.counts.lrt <- lapply(alr_counts_res, '[[', 'sleuthALR.lrt')
+all_results_kal$sleuthALR.counts.wt <- lapply(alr_counts_res, '[[', 'sleuthALR.wt')
+rm(alr_counts_res)
+
 message(paste('running ALDEx2 iqlr', Sys.time()))
 aldex2_iqlr_res <- mclapply(1:N_SIM,
   function(i) {
