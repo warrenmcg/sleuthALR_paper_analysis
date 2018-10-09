@@ -11,10 +11,10 @@ library("sleuth")
 library("sleuthALR")
 library("ALDEx2")
 
-get_human_gene_names <- function() {
+get_human_gene_names <- function(host = "dec2016.archive.ensembl.org") {
   mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
     dataset = "hsapiens_gene_ensembl",
-    host = "dec2016.archive.ensembl.org")
+    host = host)
   ttg <- biomaRt::getBM(
     attributes = c("ensembl_transcript_id", "transcript_version",
       "ensembl_gene_id", "version", "external_gene_name"),
@@ -42,10 +42,10 @@ get_human_gene_names <- function() {
   ttg
 }
 
-get_mouse_gene_names <- function() {
+get_mouse_gene_names <- function(host = "dec2016.archive.ensembl.org") {
   mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
     dataset = "mmusculus_gene_ensembl",
-    host = "dec2016.archive.ensembl.org")
+    host = host)
   ttg <- biomaRt::getBM(
     attributes = c("ensembl_transcript_id", "transcript_version",
     "ensembl_gene_id", "external_gene_name", "version"),
