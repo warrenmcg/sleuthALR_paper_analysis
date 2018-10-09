@@ -241,7 +241,6 @@ rule salmon:
         ' -i {SALMON_INDEX}'
         ' --numGibbsSamples 100'
         ' --gcBias'
-        ' --seqBias'
         ' --useVBOpt'
         ' -o {output[0]}'
         ' -p {threads}'
