@@ -26,13 +26,8 @@ SALMON = BIN + '/salmon'
 #     getenv('PATH')
 #     ])
 UPDATED_PATH = 'PATH=' + BIN + ':$PATH'
-HISAT = BIN + '/hisat2'
 
 SAMTOOLS = BIN + '/samtools'
-
-FEATURE_COUNTS = BIN + '/featureCounts'
-
-SEQTK = BIN + '/seqtk'
 
 PANDOC = BIN + '/pandoc'
 

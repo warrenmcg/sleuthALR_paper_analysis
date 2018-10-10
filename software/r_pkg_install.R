@@ -7,14 +7,19 @@ if (!file.exists('r_pkg_install_success.txt')) {
   install.packages('rmarkdown')
   install.packages('dplyr')
   install.packages('cowplot')
+  install.packages('openxlsx')
 
   source("https://bioconductor.org/biocLite.R")
   biocLite()
-  biocLite(c('DESeq2', 'limma', 'ALDEx2', 'SRAdb'))
+  biocLite(c('DESeq2', 'limma', 'SRAdb', 'RUVSeq'))
 
-  devtools::install_github('pachterlab/sleuth')
+  ## Install modified repos
+  devtools::install_github('warrenmcg/ALDEx2', ref = 'RELEASE_3_6')
+  devtools::install_github('warrenmcg/sleuth', ref = 'speedy_fit')
+  devtools::install_github('warrenmcg/polyester')
+
+  ## Install other github packages
   devtools::install_github('pimentel/mamabear')
-  devtools::install_github('COMBINE-lab/wasabi')
   devtools::install_github('warrenmcg/sleuthALR')
   devtools::install_github('warrenmcg/absSimSeq')
 
