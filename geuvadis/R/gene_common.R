@@ -1,11 +1,19 @@
 # most of these colors were pulled from the colorblind pallet
 # take a look at mamabear::de_benchmark.R
-method_colors <- c(DESeq2 = '#2166ac',
-  edgeR = '#92c5de',
-  voom = '#E69F00',
-  ALDEx2 = '#009E73',
-  sleuth = '#999999',
-  `sleuth-ALR` = '#000000')
+method_colors <- c(DESeq2 = '#2166ac', # blue
+  `DESeq2 +\nC.N.` = '#103356',
+  `DESeq2 +\nRUVg` = '#5499de',
+  edgeR = '#92c5de', # light blue
+  `edgeR +\nC.N.` = '#4ea1ca',
+  `edgeR +\nRUVg` = '#c4e0ed',
+  limma = '#E69F00', # gold
+  `limma +\nC.N.` = '#996900', # dark gold
+  `sleuth LRT` = '#000000', # previously #999999
+  `sleuth Wald` = '#999999',
+  `sleuth-ALR\nLRT` = '#FF3030', # firebrick1
+  `sleuth-ALR\nWald` = '#990000',
+  `ALDEx2\noverlap`= '#009E73' # green
+)
 
 method_colors_old <- c('DESeq2' = "#0072B2",
   edgeR = '#CC79A7',
@@ -14,16 +22,30 @@ method_colors_old <- c('DESeq2' = "#0072B2",
   sleuth = 'black',
   `sleuth-ALR` = 'firebrick1')
 
-full_method_colors <- c(DESeq2 = '#2166ac',
+full_method_colors <- c(
+  DESeq2 = '#2166ac',
+  DESeq2_RUVg = '#2166ac',
+  DESeq2_denom = '#2166ac',
   edgeR = '#92c5de',
+  edgeR_denom = '#92c5de',
+  edgeR_RUVg = '#92c5de',
   limmaVoom = '#E69F00',
-  ALDEx2.overlap = '#009E73',
-  ALDEx2.wilcoxon = '#CC79A7',
-  ALDEx2.welch = '#664600',
-  sleuth.lrt = '#999999',
-  sleuth.wt = '#999999',
-  sleuthALR.lrt = '#000000',
-  sleuthALR.wt = '#000000')
+  limmaVoom_denom = '#E69F00',
+  ALDEx2.iqlr.overlap = '#009E73',
+  ALDEx2.iqlr.wilcoxon = '#CC79A7',
+  ALDEx2.iqlr.welch = '#FFC64D',
+  ALDEx2.clr.overlap = '#009E73',
+  ALDEx2.clr.wilcoxon = '#CC79A7',
+  ALDEx2.clr.welch = '#FFC64D',
+  ALDEx2.denom.overlap = '#009E73',
+  ALDEx2.denom.wilcoxon = '#CC79A7',
+  ALDEx2.denom.welch = '#FFC64D',
+  sleuth.lrt = '#000000',
+  sleuth.wt = '#000000',
+  sleuthALR.lrt = '#FF3030',
+  sleuthALR.wt = '#990000', # dark red
+  sleuthALR.counts.lrt = '#FF66FF', # light purple
+  sleuthALR.counts.wt = '#660066') # dark purple
 
 method_kal_ltys <- rep(1, length(full_method_colors))
 method_sal_ltys <- rep(2, length(full_method_colors))
