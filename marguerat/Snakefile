@@ -1,0 +1,99 @@
+include: '../config.py'
+
+from os.path import isfile
+
+rule init:
+    output:
+        'metadata/accessions.txt',
+        'metadata/exp_info.txt'
+        
+    shell:
+        source_r('R', 'get_metadata.R')
+
+# TODO: put this at the beginning of the pipeline (run it before everything)
+ACCESSION_FILE = 'metadata/accessions.txt'
+ERA_SINGLE = []
+if isfile(ACCESSION_FILE):
+    ERA_SINGLE = get_sample_ids(ACCESSION_FILE)
+else:
+    # force running the init
+    print('Warning: the accession file is missing or the init script has not yet been run. Running now.')
+    rule:
+        input:
+          rules.init.output
+
+rule all:
+    input:
+        # get all the metadata we need from ENA
+        'metadata/accessions.txt',
+        'metadata/exp_info.txt',
+        'abs_counts/abs_counts.txt',
+
+        expand('data/{acc}.fastq.gz', acc = ERA_SINGLE),
+        'results/sleuth',
+        expand('results/kallisto/{acc}/abundance.h5', acc = ERA_SINGLE),
+        expand('results/salmon/{acc}/abundance.h5', acc = ERA_SINGLE),
+        'results/yeast_results.rds'
+
+rule fastq_dump:
+    input:
+        ERA_SINGLE
+    output:
+        'data/{id}.fastq.gz'
+    threads: 1
+    shell:
+        'wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR135/{input[0]}/{input[0]}.fastq.gz && '
+        ' mv {input[0]}.fastq.gz {output[0]}'
+
+rule abs_counts:
+    output:
+        'abs_counts/abs_counts.txt'
+    shell:
+        source_r('R', 'get_abs_counts.R')
+
+rule kallisto:
+    input:
+        'data/{id}.fastq.gz'
+    output:
+        'results/kallisto/{id}',
+        'results/kallisto/{id}/abundance.h5'
+    threads: 5
+    shell:
+        '{UPDATED_PATH} '
+        'kallisto quant'
+        ' -i {YEAST_KALLISTO_INDEX}'
+        ' -b 100'
+        ' -l 200'
+        ' -s 20'
+        ' --single'
+        ' --fr-stranded'
+        ' -o {output[0]}'
+        ' -t {threads}'
+        ' {input[0]}'
+
+def get_sleuth(wildcards):
+    ret = []
+    ret += expand('results/kallisto/{id}/abundance.h5',
+        id = ERA_SINGLE)
+    ret += expand('results/salmon/{id}/abundance.h5',
+        id = ERA_SINGLE)
+    return ret
+
+rule sleuth:
+    input:
+        expand('results/kallisto/{id}/abundance.h5', id = ERA_SINGLE),
+        expand('results/salmon/{id}/abundance.h5', id = ERA_SINGLE)
+    output:
+        'results/sleuth'
+    shell:
+        'touch {output}'
+
+rule results:
+    input:
+        'results/sleuth'
+    output:
+        'results/yeast_results.rds'
+    threads:
+        4
+    shell:
+        source_r('R', 'yeast_results.R') + ' {threads}'
