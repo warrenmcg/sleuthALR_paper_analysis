@@ -152,7 +152,7 @@ filename <- file.path(base_dir, paste0('figureS4', default_extension))
 save_plot(filename, p, base_width = 6.5)
 
 ## impute parameters
-message('making figure S6')
+message('making figure S7')
 original_labels <- c('sleuth.wt', 'sleuthALR.wt',
   'sleuthALR.0.1.wt', 'sleuthALR.0.01.wt', 'sleuthALR.0.001.wt',
   'sleuthALR.1E4.wt', 'sleuthALR.counts.wt',
@@ -189,5 +189,5 @@ legend <- get_legend(tpm_graphs[[1]])
 p2 <- plot_grid(tpm_prow, legend, rel_widths = c(3, 1))
 
 p <- plot_grid(p1, p2, align = 'v', ncol = 1)
-filename <- file.path(base_dir, paste0('figureS6', default_extension))
+filename <- file.path(base_dir, paste0('figureS7', default_extension))
 save_plot(filename, p, base_aspect_ratio = 1.75, base_height = 3.76)
