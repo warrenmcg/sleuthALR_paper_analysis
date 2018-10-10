@@ -13,6 +13,7 @@ Take a look at `run_benchmarks.R` to see how this data is generated.
 
 ```{r}
 suppressMessages({
+.libPaths(c("~/R_library", .libPaths()))
 library('ggplot2')
 library('mamabear')
 library('dplyr')
@@ -50,8 +51,11 @@ Let’s rename things to be a bit more consistent with the main figures:
 ```{r}
 mapping <- c('sleuth.lrt' = 'sleuth', 'limmaVoom' = 'voom',
   'DESeq2' = 'DESeq2', 'DESeq' = 'DESeq', 'Cuffdiff2' = 'Cuffdiff 2',
-  'EBSeq' = 'EBSeq', 'edgeR' = 'edgeR')
+  'edgeR' = 'edgeR', 'sleuth-ALR' = 'sleuth-ALR',
+  'ALDEx2.filt.overlap' = 'ALDEx2')
 self_fdr <- dplyr::filter(self_fdr, method != 'sleuth.wt')
+self_fdr <- dplyr::filter(self_fdr, !grepl("(wilcoxon|welch)", method))
+self_fdr <- dplyr::filter(self_fdr, method != 'ALDEx2.overlap')
 self_fdr <- dplyr::mutate(self_fdr, method = mapping[method])
 ```
 
@@ -118,8 +122,11 @@ Let’s rename things to be a bit more consistent with the main figures:
 ```{r}
 mapping <- c('sleuth.lrt' = 'sleuth', 'limmaVoom' = 'voom',
   'DESeq2' = 'DESeq2', 'DESeq' = 'DESeq', 'Cuffdiff2' = 'Cuffdiff 2',
-  'EBSeq' = 'EBSeq', 'edgeR' = 'edgeR')
+  'edgeR' = 'edgeR', 'sleuth-ALR' = 'sleuth-ALR',
+  'ALDEx2.filt.overlap' = 'ALDEx2')#, 'ALDEx2.filt.overlap' = 'ALDEx2-filtered')
 self_fdr <- dplyr::filter(self_fdr, method != 'sleuth.wt')
+self_fdr <- dplyr::filter(self_fdr, !grepl("(wilcoxon|welch)", method))
+self_fdr <- dplyr::filter(self_fdr, method != 'ALDEx2.overlap')
 self_fdr <- dplyr::mutate(self_fdr, method = mapping[method])
 ```
 
