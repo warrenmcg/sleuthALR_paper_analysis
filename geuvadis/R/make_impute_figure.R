@@ -81,4 +81,4 @@ alr01_graph <- alr01_graph + theme_hp() +
 
 p <- plot_grid(alr_graph, alr01_graph, labels = "AUTO", align = "vh", nrow = 1, label_size = 16, hjust = -1)
 
-save_plot('../results/final_figures/figureS6.pdf', p, base_aspect_ratio = 2, base_height = 3)
+save_plot('../results/final_figures/figureS7.pdf', p, base_aspect_ratio = 2, base_height = 3)

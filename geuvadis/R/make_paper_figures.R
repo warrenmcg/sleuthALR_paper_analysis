@@ -60,7 +60,7 @@ filename <- file.path(base_dir, paste0('figure2', default_extension))
 save_plot(filename, p, base_width = 6.5)
 
 #### CODE FOR FIGURE 3 -- Bottomly Self-consistency Experiment ###
-message("making Figure 3 and Figure S5")
+message("making Figure 4 and Figure S6")
 mapping <- c('sleuth.lrt' = 'sleuth LRT', 'sleuth.wt' = 'sleuth Wald',
   'sleuthALR.lrt' = 'sleuth-ALR\nLRT', 'sleuthALR.wt' = 'sleuth-ALR\nWald',
   'limmaVoom' = 'limma +\nC.N.', 'limmaVoom_old' = 'limma',
@@ -73,21 +73,21 @@ bench <- readRDS(iso_file)
 iso_p <- make_fig3(bench, mapping)
 
 p <- plot_grid(iso_p, labels = "AUTO", align = "vh", nrow = 1, label_size = 24, hjust = -0.5, vjust = 1.25)
-filename <- file.path(base_dir, paste0('figure3', default_extension))
+filename <- file.path(base_dir, paste0('figure4', default_extension))
 save_plot(filename, p, base_aspect_ratio = 1.5, base_width = 6)
 
 iso_p <- make_fig3(bench, suppl = TRUE)
 
 p <- plot_grid(iso_p, labels = "", align = "vh", ncol = 1, label_size = 20, hjust = -0.5, vjust = 1.25, axis = "bottom")
-filename <- file.path(base_dir, paste0('figureS5', default_extension))
+filename <- file.path(base_dir, paste0('figureS6', default_extension))
 save_plot(filename, p, base_aspect_ratio = 1.5, base_width = 6)
 
 ### FIGURE 4 -- GEUVADIS NULL RESAMPLING EXPERIMENT ###
-message("making figure 4")
+message("making figure 5")
 self_benchmark <- readRDS('../results/null_resampling/isoform.rds')
 iso_p <- make_fig4(self_benchmark)
 p <- plot_grid(iso_p, labels = "AUTO", align = "vh", nrow = 1, label_size = 24, hjust = -0.5, vjust = 1.25)
-filename <- file.path(base_dir, paste0('figure4', default_extension))
+filename <- file.path(base_dir, paste0('figure5', default_extension))
 save_plot(filename, p, base_aspect_ratio = 1.5, base_height = 6)
 
 ## aldex parameters
@@ -152,7 +152,7 @@ filename <- file.path(base_dir, paste0('figureS4', default_extension))
 save_plot(filename, p, base_width = 6.5)
 
 ## impute parameters
-message('making figure S7')
+message('making figure S8')
 original_labels <- c('sleuth.wt', 'sleuthALR.wt',
   'sleuthALR.0.1.wt', 'sleuthALR.0.01.wt', 'sleuthALR.0.001.wt',
   'sleuthALR.1E4.wt', 'sleuthALR.counts.wt',
@@ -189,5 +189,5 @@ legend <- get_legend(tpm_graphs[[1]])
 p2 <- plot_grid(tpm_prow, legend, rel_widths = c(3, 1))
 
 p <- plot_grid(p1, p2, align = 'v', ncol = 1)
-filename <- file.path(base_dir, paste0('figureS7', default_extension))
+filename <- file.path(base_dir, paste0('figureS8', default_extension))
 save_plot(filename, p, base_aspect_ratio = 1.75, base_height = 3.76)

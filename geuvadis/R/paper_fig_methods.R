@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   source('gene_common.R')
 })
 
-# theme used in Figures 2, S2-S4
+# theme used in Figures 2, S2-S4, and S8
 theme_wam <- theme(
   axis.title.x = ggplot2::element_text(size = 10, face = "bold", family = "ArialMT"),
   axis.title.y = ggplot2::element_text(size = 10, face = "bold", family = "ArialMT"),
@@ -19,7 +19,7 @@ theme_wam <- theme(
   legend.title = ggplot2::element_text(size = 10, family = "ArialMT")
 )
 
-# theme used in Figures 3 and 4
+# theme used in Figures 3-5, and S5-S7
 theme_hp <- function() {
   theme_cowplot(12) +
     theme(legend.key.size = unit(2, "lines"), legend.position = "none",
@@ -187,7 +187,7 @@ make_sleuth_plot <- function(benchmarks, to_keep, new_labels_kal) {
   p
 }
 
-## CODE for Figure S5 -- Internal sleuth-ALR imputation comparison ###
+## CODE for Figure S8 -- Internal sleuth-ALR imputation comparison ###
 
 make_impute_plots <- function(benchmarks, original_labels, new_labels_kal) {
   benchmarks <- lapply(benchmarks, function(bench) {
