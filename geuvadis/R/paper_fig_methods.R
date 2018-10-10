@@ -42,7 +42,18 @@ make_benchmark_plots <- function(benchmarks, to_include, new_labels_kal) {
     original_label <- subset_names[i]
     new_label <- new_names_kal[i]
     lapply(bench_list, function(bench) {
-      rename_benchmark(bench, original_label, new_label, join_mode = "intersect")
+      new_bench <- rename_benchmark(bench, original_label, new_label, join_mode = "intersect")
+      if (grepl("RUVg", original_label)) {
+        new_bench$line_mapping <- 4
+        names(new_bench$line_mapping) <- new_label
+      } else if (!(original_label %in% denom_names)) {
+        new_bench$line_mapping <- 2
+        names(new_bench$line_mapping) <- new_label
+      }
+      if (original_label == "ALDEx2.denom.overlap") {
+        new_bench$color_mapping <- c("ALDEx2+denom" = '#009E73')
+      }
+      new_bench
     })
   })
   color_mapping <- sapply(subset_benchmarks, function(x) x[[1]]$color_mapping)
@@ -81,6 +92,12 @@ make_fig3 <- function(self_benchmark, mapping) {
   self_fdr <- dplyr::mutate(self_fdr, method = sub('qval_', '', method))
   self_fdr <- dplyr::filter(self_fdr, !grepl("(wilcoxon|welch)", method))
   self_fdr <- dplyr::mutate(self_fdr, method = mapping[method])
+  
+  if (!suppl) {
+    self_fdr <- dplyr::filter(self_fdr, fdr_level == 0.1)
+  } else {
+    self_fdr <- dplyr::filter(self_fdr, fdr_level != 0.1)
+  }
 
   self_fdr <- dplyr::mutate(self_fdr,
     fdr_level_string = paste0('eFDR = ', sprintf('%.2f', fdr_level)))
@@ -88,6 +105,7 @@ make_fig3 <- function(self_benchmark, mapping) {
     dplyr::group_by(method, fdr_level_string) %>%
     dplyr::summarize(n = sum(!is.na(true_fdr)))
   fdr_count <- dplyr::mutate(fdr_count, y = 1)
+
   p <- ggplot(self_fdr, aes(method, true_fdr, color = method)) +
     geom_boxplot(outlier.shape = NA) + #avoid plotting outliers twice
     geom_jitter(size = 0.5, position = position_jitter(width = 0.375, height = 0), alpha = 0.5) +
@@ -111,10 +129,15 @@ make_fig4 <- function(self_benchmark) {
   self_fdr <- dplyr::mutate(self_fdr,
     fdr_level_string = paste0('eFDR = ', sprintf('%.2f', fdr_level)))
 
+  library(scales)
+  S_log10 <- function(x) {ifelse(x == 0, 0, sign(x) * log10(abs(x)))}
+  IS_log10 <- function(x) {ifelse(x == 0, 0, 10^abs(x) * sign(x))}
+  S_log10_trans <- function() trans_new("S_log10", S_log10, IS_log10)
+
   p <- ggplot(self_fdr, aes(method, fp, color = method)) +
     geom_boxplot(outlier.shape = NA) +
     facet_wrap(~fdr_level_string, ncol = 1) +
-    scale_y_sqrt() +
+    scale_y_continuous(trans = "S_log10", breaks = c(0, 10, 30, 100, 300, 1000, 3000, 10000, 30000)) +
     ylab('number of false positives') +
     theme_hp() + theme(axis.text.x = ggplot2::element_text(family = "ArialMT", angle = 45, vjust = 1, hjust=1),
                        panel.grid.major.y = element_line(colour = "grey92")) +
@@ -131,7 +154,19 @@ make_aldex_plot <- function(benchmarks, to_keep, new_labels_kal) {
   subset_names <- names(subset_benchmarks)
   new_names_kal <- new_labels_kal[match(subset_names, to_keep)]
   subset_benchmarks <- lapply(subset_benchmarks, function(bench) {
-    rename_benchmark(bench, subset_names, new_names_kal, join_mode = "intersect")
+    bench_list <- subset_benchmarks[[i]]
+    original_label <- subset_names[i]
+    new_label <- new_names_kal[i]
+    lapply(bench_list, function(bench) {
+      new_bench <- rename_benchmark(bench, original_label, new_label, join_mode = "intersect")
+      if (grepl("iqlr", original_label)) {
+        new_bench$line_mapping <- 2
+      } else if (grepl("clr", original_label)) {
+        new_bench$line_mapping <- 4
+      }
+      names(new_bench$line_mapping) <- new_label
+      new_bench
+    })
   })
   color_mapping <- sapply(subset_benchmarks, function(x) x[[1]]$color_mapping)
   line_mapping <- sapply(subset_benchmarks, function(x) x[[1]]$line_mapping)
@@ -163,7 +198,17 @@ make_sleuth_plot <- function(benchmarks, to_keep, new_labels_kal) {
   subset_names <- names(subset_benchmarks)
   new_names_kal <- new_labels_kal[match(subset_names, to_keep)]
   subset_benchmarks <- lapply(subset_benchmarks, function(bench) {
-    rename_benchmark(bench, subset_names, new_names_kal, join_mode = "intersect")
+    bench_list <- subset_benchmarks[[i]]
+    original_label <- subset_names[i]
+    new_label <- new_names_kal[i]
+    lapply(bench_list, function(bench) {
+      new_bench <- rename_benchmark(bench, original_label, new_label, join_mode = "intersect")
+      if (grepl("wt", original_label)) {
+        new_bench$line_mapping <- 2
+      }
+      names(new_bench$line_mapping) <- new_label
+      new_bench
+    })
   })
   color_mapping <- sapply(subset_benchmarks, function(x) x[[1]]$color_mapping)
   line_mapping <- sapply(subset_benchmarks, function(x) x[[1]]$line_mapping)
