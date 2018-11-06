@@ -46,7 +46,7 @@ make_benchmark_plots <- function(benchmarks, to_include, new_labels_kal) {
       if (grepl("RUVg", original_label)) {
         new_bench$line_mapping <- 4
         names(new_bench$line_mapping) <- new_label
-      } else if (!(original_label %in% denom_names)) {
+      } else if (!grepl("denom", original_label)) {
         new_bench$line_mapping <- 2
         names(new_bench$line_mapping) <- new_label
       }
