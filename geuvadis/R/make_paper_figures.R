@@ -26,6 +26,7 @@ new_labels <- c('sleuth', 'ALDEx2 IQLR', 'DESeq2', 'edgeR',
 
 graphs <- lapply(1:3, function(i) {
   b <- benchmarks[[i]]
+  message(i)
   invisible(make_benchmark_plots(b, to_include, new_labels))
 })
 
