@@ -4,7 +4,7 @@ base_dir <- '../results/final_figures'
 default_extension <- '.pdf'
 
 message('loading benchmarks')
-sim_name <- "isoform_5_5_15_387_1"
+sim_name <- "isoform_5_5_30_645175_1"
 sim_types <- c('small', 'down', 'up')
 suffix <- 'benchmarks.rds'
 benchmarks <- lapply(sim_types, function(sim_type) {

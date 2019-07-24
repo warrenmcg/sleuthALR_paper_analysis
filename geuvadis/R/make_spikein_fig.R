@@ -11,7 +11,7 @@ all_spikeins <- rownames(ERCC92_data)
 logmeans <- log2(rowMeans(ERCC92_data[,c(4:5)]))
 denoms <- names(logmeans[logmeans > 3])
 
-sim_name <- 'isoform_5_5_15_387_1'
+sim_name <- 'isoform_5_5_30_645175_1'
 base_dir <- '../results/final_figures'
 default_extension <- '.pdf'
 

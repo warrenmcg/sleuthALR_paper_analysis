@@ -1,6 +1,6 @@
 .libPaths(c("~/R_library", .libPaths()))
 
-sim_name <- 'isoform_5_5_15_387_1'
+sim_name <- 'isoform_5_5_30_645175_1'
 target_id <- 'ENST00000561452.5'
 n_cpu <- 10
 

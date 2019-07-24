@@ -6,12 +6,11 @@ if (length(args) != 2) {
 }
 
 # temporary for debugging
-# n_cpu <- 20
-# sim_name <- 'isoform_5_5_15_387_1'
+# n_cpu <- 30
+# sim_name <- 'isoform_5_5_30_645175_1'
 
 n_cpu <- args[1]
 sim_name <- args[2]
-
 
 source("benchmark_methods.R")
 source("gene_common.R")
@@ -29,8 +28,8 @@ transcript_gene_mapping <- get_human_gene_names()
 
 all_results_kal <- list()
 
-N_SIM <- 15
-GROUP_BREAKS <- c(5, 10)
+N_SIM <- 30
+GROUP_BREAKS <- c(5, 10, 15, 20, 25)
 
 sim <- parse_simulation(sim_name)
 
@@ -66,6 +65,7 @@ data('ERCC92_data', package = "absSimSeq")
 log_means <- log2(rowMeans(ERCC92_data[,c(4:5)]))
 denoms <- names(log_means[log_means > 3])
 denoms <- gsub('_', '-', denoms)
+denoms <- denoms[which(denoms != "ERCC-00054")]
 
 alr_res <- mclapply(1:N_SIM,
   function(i) {

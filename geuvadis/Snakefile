@@ -47,19 +47,19 @@ rule all:
         'results/null_resampling_fdr_report.html',
 
         # do a large experiment so that we can do permutations
-        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_30_645175_1',
                exp = SIM_NAMES, id = SIM_IDS, i = [1, 2]),
-        expand('sims/{sim}/{exp}/results/sleuth', sim = 'isoform_5_5_15_387_1',
+        expand('sims/{sim}/{exp}/results/sleuth', sim = 'isoform_5_5_30_645175_1',
                exp = SIM_NAMES),
-        expand('sims/{sim}/{exp}/{id}/kallisto/abundance.h5', sim = 'isoform_5_5_15_387_1',
+        expand('sims/{sim}/{exp}/{id}/kallisto/abundance.h5', sim = 'isoform_5_5_30_645175_1',
                exp = SIM_NAMES, id = SIM_IDS),
-        expand('results/{sim}/small_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/down_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/up_kal_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/small_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/down_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/up_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_15_387_1'),
-        expand('results/{sim}/benchmark_report.html', sim = 'isoform_5_5_15_387_1')
+        expand('results/{sim}/small_kal_benchmarks.rds', sim = 'isoform_5_5_30_645175_1'),
+        expand('results/{sim}/down_kal_benchmarks.rds', sim = 'isoform_5_5_30_645175_1'),
+        expand('results/{sim}/up_kal_benchmarks.rds', sim = 'isoform_5_5_30_645175_1'),
+        expand('results/{sim}/small_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_30_645175_1'),
+        expand('results/{sim}/down_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_30_645175_1'),
+        expand('results/{sim}/up_kal_filt_impute_benchmarks.rds', sim = 'isoform_5_5_30_645175_1'),
+        expand('results/{sim}/benchmark_report.html', sim = 'isoform_5_5_30_645175_1')
 
 def finn_sample_input(wildcards):
     id = wildcards['id']
@@ -146,20 +146,20 @@ rule make_simulation:
         'results/finn_sleuth.rds'
     output:
         'results/polyester_ground_truth.RData',
-        expand('sims/{sim}/{exp}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+        expand('sims/{sim}/{exp}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_30_645175_1',
                exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
     shell:
         source_r('R', 'run_simulation.R')
  
 rule move_files:
     input:
-        expand('sims/{sim}/{exp}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+        expand('sims/{sim}/{exp}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_30_645175_1',
                exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
     output:
-        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_15_387_1',
+        expand('sims/{sim}/{exp}/{id}/{id}_{i}.fasta.gz', sim = 'isoform_5_5_30_645175_1',
                exp = SIM_NAMES, id = SIM_IDS, i = [1, 2])
     shell:
-        source_r('R', 'move_sim_files.R') + ' ../sims/isoform_5_5_15_387_1'
+        source_r('R', 'move_sim_files.R') + ' ../sims/isoform_5_5_30_645175_1'
 
 def sim_sample_input(wildcards):
     sim = wildcards['sim']
