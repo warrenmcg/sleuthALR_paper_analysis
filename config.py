@@ -2,22 +2,20 @@
 # configuration that should be handled manually and will differ between systems
 ###
 
-# BASE = '/home/hjp/sleuth_paper_analysis'
-# BASE = '/Users/hjp/analysis/sleuth_paper'
-# TODO: make this a absolute path before submission
 from os.path import expanduser, splitext
 from os import getenv
 from pandas import read_table
 
 HOME = expanduser('~')
-BASE = HOME + '/sleuth_paper_analysis'
+BASE = HOME + '/sleuthALR_paper_analysis'
+CONDA = HOME + '/miniconda3'
 
 N_THREADS = 50
 
 ###
 # software
 ###
-BIN = BASE + '/software/bin'
+BIN = CONDA + '/bin'
 
 KALLISTO = BIN + '/kallisto'
 SALMON = BIN + '/salmon'
@@ -31,6 +29,8 @@ UPDATED_PATH = 'PATH=' + BIN + ':$PATH'
 SAMTOOLS = BIN + '/samtools'
 
 PANDOC = BIN + '/pandoc'
+OPENSSL = BIN + '/openssl'
+FASTQ_DUMP = BIN + '/fastq-dump'
 
 # import os
 

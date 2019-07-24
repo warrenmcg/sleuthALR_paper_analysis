@@ -1,17 +1,13 @@
 if (!file.exists('r_pkg_install_success.txt')) {
   options(repos = c(CRAN = 'http://cran.us.r-project.org'))
-  dir.create('~/R_library', showWarnings = F)
-  .libPaths(c('~/R_library', .libPaths()))
-
-  install.packages('devtools')
-  install.packages('rmarkdown')
-  install.packages('dplyr')
-  install.packages('cowplot')
-  install.packages('openxlsx')
 
   source("https://bioconductor.org/biocLite.R")
-  biocLite()
-  biocLite(c('DESeq2', 'limma', 'SRAdb', 'RUVSeq'))
+  ## Install Bioconductor packages not avaialble on bioconda
+  biocLite(c('SRAdb', 'TCC'))
+
+  ## place non-standard packages into a separate directory
+  dir.create('~/R_library', showWarnings = F)
+  .libPaths(c('~/R_library', .libPaths()))
 
   ## Install modified repos
   devtools::install_github('warrenmcg/ALDEx2', ref = 'RELEASE_3_6')
