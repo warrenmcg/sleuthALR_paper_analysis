@@ -35,7 +35,7 @@ rule get_transcriptome:
     shell:
         'curl -o gencode.v25.transcripts.fa.gz'
         ' --silent'
-        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_25/gencode.v25.transcripts.fa.gz && '
+        ' ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_25/gencode.v25.transcripts.fa.gz && '
         ' gunzip gencode.v25.transcripts.fa.gz && '
         ' awk -F\'|\' \'{{print $1}}\' gencode.v25.transcripts.fa > {output} && '
         ' rm gencode.v25.transcripts.fa'
@@ -57,7 +57,7 @@ rule salmon_index:
     threads:
         N_THREADS
     output:
-        SALMON_INDEX
+        directory(SALMON_INDEX)
     shell:
         '{UPDATED_PATH} '
         'salmon index'
@@ -83,7 +83,7 @@ rule sal_spikein_index:
     threads:
         N_THREADS
     output:
-        SALMON_SPIKEIN_INDEX
+        directory(SALMON_SPIKEIN_INDEX)
     shell:
         '{UPDATED_PATH} '
         'salmon index'
@@ -101,7 +101,7 @@ rule get_mouse_transcriptome:
     shell:
         'curl -o gencode.vM12.transcripts.fa.gz'
         ' --silent'
-        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M12/gencode.vM12.transcripts.fa.gz && '
+        ' ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M12/gencode.vM12.transcripts.fa.gz && '
         ' gunzip gencode.vM12.transcripts.fa.gz && '
         ' awk -F\'|\' \'{{print $1}}\' "gencode.vM12.transcripts.fa" > {output} && '
         ' rm gencode.vM12.transcripts.fa'
@@ -124,7 +124,7 @@ rule salmon_mouse_index:
     threads:
         N_THREADS
     output:
-        MOUSE_SALMON_INDEX
+        directory(MOUSE_SALMON_INDEX)
     shell:
         '{UPDATED_PATH} '
         'salmon index'
@@ -151,7 +151,7 @@ rule get_yeast_transcriptome:
         ' ftp://ftp.ensemblgenomes.org/pub/release-37/fungi/fasta/schizosaccharomyces_pombe/ncrna/Schizosaccharomyces_pombe.ASM294v2.ncrna.fa.gz && '
         ' gunzip ASM294v2.pombase.ncrna.fa.gz && '
         ' cat ASM294v2.pombase.cdna.fa ASM294v2.pombase.ncrna.fa > ASM294v2.pombase.all.fa && '
-        ' rm ASM294v2.pombase.cdna.fa ASm294v2.pombase.ncrna.fa'
+        ' rm ASM294v2.pombase.cdna.fa ASM294v2.pombase.ncrna.fa'
 
 rule yeast_kallisto_index:
     input:
@@ -170,7 +170,7 @@ rule yeast_salmon_index:
     threads:
         N_THREADS
     output:
-        YEAST_SALMON_INDEX
+        directory(YEAST_SALMON_INDEX)
     shell:
         '{UPDATED_PATH} '
         'salmon index'
