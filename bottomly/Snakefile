@@ -61,10 +61,8 @@ rule all:
     input:
         expand('data/single/{id}/{id}.fastq.gz', id = SRA_SINGLE),
         expand('data/single/{id}/{id}_trimmed.fastq.gz', id = SRA_SINGLE),
-        expand('results/single/{id}/featureCounts.txt', id = SRA_SINGLE),
         expand('results/single/{id}/kallisto/abundance.h5', id = SRA_SINGLE),
         'R/fdr.html'
-
 
 rule fastq_dump_single:
     input:
@@ -101,8 +99,9 @@ rule fastq_trim:
 rule kallisto:
     input:
         'data/single/{id,[A-Z]+[0-9]+}/{id}_trimmed.fastq.gz'
+    params:
+        dir = 'results/single/{id}/kallisto'
     output:
-        'results/single/{id}/kallisto',
         'results/single/{id}/kallisto/abundance.h5'
     threads: 5
     shell:
@@ -112,49 +111,10 @@ rule kallisto:
         ' -b 100'
         ' -t 5'
         ' -i {MOUSE_KALLISTO_INDEX}'
-        ' -o {output[0]}'
+        ' -o {params.dir}'
         ' --single'
         ' -l 300'
         ' -s 20'
-        ' {input}'
-
-rule hisat_alignment:
-    input:
-        'data/single/{id,[A-Z]+[0-9]+}/{id}_trimmed.fastq.gz',
-    output:
-        'results/single/{id}/hisat.bam'
-    threads: 20
-    shell:
-        '{UPDATED_PATH}'
-        ' hisat2'
-        ' -x {MOUSE_HISAT_INDEX}'
-        ' -U {input[0]}'
-        ' --dta-cufflinks'
-        ' -p {threads}'
-        ' | '
-        '{UPDATED_PATH} samtools view -Sb -'
-        ' > '
-        '{output}.unsorted'
-        ' && '
-        '{UPDATED_PATH} samtools sort'
-        ' -o {output}'
-        ' {output}.unsorted'
-        ' && '
-        'rm {output}.unsorted'
-
-rule featureCounts:
-    input:
-        'results/single/{id,[A-Z]+[0-9]+}/hisat.bam'
-    output:
-        'results/single/{id}/featureCounts.txt'
-    threads: 5
-    shell:
-        '{UPDATED_PATH} '
-        'featureCounts '
-        ' -a {MOUSE_TRANSCRIPTOME_GTF}'
-        ' -o {output}'
-        ' -T {threads}'
-        ' -p'
         ' {input}'
 
 rule run_benchmarks_isoform:
@@ -167,34 +127,13 @@ rule run_benchmarks_isoform:
         source_r('R', 'run_benchmarks.R') +
         ' {threads}'
 
-rule run_benchmarks_gene:
-    input:
-        expand('results/single/{id}/kallisto/abundance.h5', id = SRA_SINGLE),
-        expand('results/single/{id}/featureCounts.txt', id = SRA_SINGLE),
-    output:
-        'results/gene_self_benchmark.rds'
-    threads: N_THREADS
-    shell:
-        source_r('R', 'run_benchmarks_gene.R') +
-        ' {threads}'
-
 rule fdr_plots:
     input:
-        'results/isoform_self_benchmark.rds',
-        'results/gene_self_benchmark.rds'
+        'results/isoform_self_benchmark.rds'
     output:
         'R/fdr.html'
     shell:
         source_rmd('R', 'fdr.Rmd')
-
-rule variance_plots:
-    input:
-        'results/isoform_self_benchmark.rds',
-        'results/gene_self_benchmark.rds'
-    output:
-        'R/var_plots.html'
-    shell:
-        source_rmd('R', 'var_plots.Rmd')
 
 rule clean:
     shell:
