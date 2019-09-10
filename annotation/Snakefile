@@ -6,21 +6,15 @@ rule all:
         # human
         ###
         TRANSCRIPTOME_FA,
-        TRANSCRIPTOME_GTF,
         KALLISTO_INDEX,
         SALMON_INDEX,
-        GENOME_FA,
-        expand('{base}.{idx}.ht2', base = HISAT_INDEX, idx = (1, 6)),
 
         ###
         # mouse
         ###
         MOUSE_TRANSCRIPTOME_FA,
-        MOUSE_TRANSCRIPTOME_GTF,
         MOUSE_KALLISTO_INDEX,
         MOUSE_SALMON_INDEX,
-        MOUSE_GENOME_FA,
-        expand('{base}.{idx}.ht2', base = MOUSE_HISAT_INDEX, idx = (1, 6)),
 
         ###
         # yeast
@@ -45,42 +39,6 @@ rule get_transcriptome:
         ' gunzip gencode.v25.transcripts.fa.gz && '
         ' awk -F\'|\' \'{{print $1}}\' gencode.v25.transcripts.fa > {output} && '
         ' rm gencode.v25.transcripts.fa'
-
-rule get_genome:
-    output:
-        GENOME_FA
-    shell:
-        'curl -o {output}'
-        ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-87/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz'
-        ' && '
-        'gunzip {output}.gz'
-
-rule get_gtf:
-    output:
-        TRANSCRIPTOME_GTF
-    shell:
-        'curl -o gencode.v25.primary_assembly.annotation.gtf.gz'
-        ' --silent'
-        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_25/gencode.v25.primary_assembly.annotation.gtf.gz && '
-        ' gunzip gencode.v25.primary_assembly.annotation.gtf.gz && '
-        ' sed \'s/^chr//\' gencode.v25.primary_assembly.annotation.gtf > gencode.v25.gtf && '
-        ' sed \'s/^M/MT/\' gencode.v25.gtf > {output} && '
-        ' rm gencode.v25.primary_assembly.annotation.gtf gencode.v25.gtf'
-
-rule make_hisat_index:
-    input:
-        GENOME_FA
-    threads:
-        N_THREADS
-    output:
-        expand('{base}.{idx}.ht2', base = HISAT_INDEX, idx = (1, 6))
-    shell:
-        '{UPDATED_PATH} '
-        'hisat2-build'
-        ' -p {threads}'
-        ' {input}'
-        ' {HISAT_INDEX}'
 
 rule kallisto_index:
     input:
@@ -148,18 +106,6 @@ rule get_mouse_transcriptome:
         ' awk -F\'|\' \'{{print $1}}\' "gencode.vM12.transcripts.fa" > {output} && '
         ' rm gencode.vM12.transcripts.fa'
 
-rule get_mouse_gtf:
-    output:
-        MOUSE_TRANSCRIPTOME_GTF
-    shell:
-        'curl -o gencode.vM12.primary_assembly.annotation.gtf.gz'
-        ' --silent'
-        ' ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M12/gencode.vM12.primary_assembly.annotation.gtf.gz && '
-        ' gunzip gencode.vM12.primary_assembly.annotation.gtf.gz && '
-        ' sed \'s/^chr//\' gencode.vM12.primary_assembly.annotation.gtf > gencode.vM12.gtf && '
-        ' sed \'s/^M/MT/\' gencode.vM12.gtf > {output} && '
-        ' rm gencode.vM12.primary_assembly.annotation.gtf gencode.vM12.gtf'
-
 rule kallisto_mouse_index:
     input:
         MOUSE_TRANSCRIPTOME_FA
@@ -187,30 +133,6 @@ rule salmon_mouse_index:
         ' -k 21'
         ' --keepDuplicates'
         ' -t {input}'
-
-rule get_mouse_genome:
-    output:
-        MOUSE_GENOME_FA
-    shell:
-        'curl -o {output}.gz'
-        ' --silent'
-        ' ftp://ftp.ensembl.org/pub/release-87/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz'
-        ' && '
-        'gunzip {output}.gz'
-
-rule make_mouse_hisat_index:
-    input:
-        MOUSE_GENOME_FA
-    threads:
-        N_THREADS
-    output:
-        expand('{base}.{idx}.ht2', base = MOUSE_HISAT_INDEX, idx = (1, 6))
-    shell:
-        '{UPDATED_PATH} '
-        'hisat2-build'
-        ' -p {threads}'
-        ' {input}'
-        ' {MOUSE_HISAT_INDEX}'
 
 ###
 # yeast stuff
