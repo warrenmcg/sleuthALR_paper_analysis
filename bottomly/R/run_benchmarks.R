@@ -118,6 +118,14 @@ all_validation$DESeq2_RUVg <- mclapply(seq_along(validation_sets),
     DESeq2_filter_and_run_intersect(obs, validation, dummy_filter, denom = denom, RUVg = TRUE)$result
   })
 
+message(paste("running DESeq2 with TCC/iDEGES", Sys.time()))
+all_validation$DESeq2_iDEGES <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- obs_raw[[i]]
+    iDEGES_filter_and_run(obs, validation, dummy_filter, norm_method = 'deseq2', test_method = 'deseq2')$result
+  })
+
 message(paste("running edgeR", Sys.time()))
 all_validation$edgeR_old <- mclapply(seq_along(validation_sets),
   function(i) {
@@ -142,6 +150,14 @@ all_validation$edgeR_RUVg <- mclapply(seq_along(validation_sets),
     edgeR_filter_and_run(obs, validation, dummy_filter, denom = denom, RUVg = TRUE)$result
   })
 
+message(paste("running edgeR with TCC/iDEGES", Sys.time()))
+all_validation$edgeR_iDEGES <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- obs_raw[[i]]
+    iDEGES_filter_and_run(obs, validation, dummy_filter, norm_method = 'edger', test_method = 'edger')$result
+  })
+
 # use the sleuth filter since limma doesn't have a recommended filter
 message(paste("running limma", Sys.time()))
 all_validation$limmaVoom_old <- mclapply(seq_along(validation_sets),
@@ -159,6 +175,15 @@ all_validation$limmaVoom <- mclapply(seq_along(validation_sets),
     obs <- obs_raw[[i]]
     sf <- sleuth_filter_bool[[i]]
     limma_filter_and_run(obs, validation, sf, denom = denom)$result
+  })
+
+message(paste("running limma with TCC/iDEGES", Sys.time()))
+all_validation$limmaVoom_iDEGES <- mclapply(seq_along(validation_sets),
+  function(i) {
+    validation <- validation_sets[[i]]
+    obs <- obs_raw[[i]]
+    sf <- sleuth_filter_bool[[i]]
+    iDEGES_filter_and_run(obs, validation, sf, norm_method = 'edger', test_method = 'voom')$result
   })
 
 message(paste("Adding truth column", Sys.time()))
@@ -212,7 +237,6 @@ rm(sleuth_training)
 
 message(paste("running sleuth-ALR on training sets", Sys.time()))
 denom <- "ENSMUST00000055241.12"
-#all_training$`sleuth-ALR`
 alr_res <- mclapply(seq_along(training_sets),
   function(i) {
     training <- training_sets[[i]]
@@ -260,6 +284,14 @@ all_training$DESeq2_RUVg <- mclapply(seq_along(training_sets),
     DESeq2_filter_and_run_intersect(obs, training, dummy_filter, denom = denom, RUVg = TRUE)$result
   })
 
+message(paste("running DESeq2 with TCC/iDEGES", Sys.time()))
+all_training$DESeq2_iDEGES <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- obs_raw[[i]]
+    iDEGES_filter_and_run(obs, training, dummy_filter, norm_method = 'deseq2', test_method = 'deseq2')$result
+  })
+
 message(paste("running edgeR on training sets", Sys.time()))
 all_training$edgeR_old <- mclapply(seq_along(training_sets),
   function(i) {
@@ -284,6 +316,14 @@ all_training$edgeR_RUVg <- mclapply(seq_along(training_sets),
     edgeR_filter_and_run(obs, training, dummy_filter, denom = denom, RUVg = TRUE)$result
   })
 
+message(paste("running edgeR with TCC/iDEGES", Sys.time()))
+all_training$edgeR_iDEGES <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- obs_raw[[i]]
+    iDEGES_filter_and_run(obs, training, dummy_filter, norm_method = 'edger', test_method = 'edger')$result
+  })
+
 # use the sleuth filter since limma doesn't have a recommended filter
 message(paste("running limma on training sets", Sys.time()))
 all_training$limmaVoom_old <- mclapply(seq_along(training_sets),
@@ -301,6 +341,15 @@ all_training$limmaVoom <- mclapply(seq_along(training_sets),
     obs <- obs_raw[[i]]
     sf <- sleuth_filter_bool[[i]]
     limma_filter_and_run(obs, training, sf, denom = denom)$result
+  })
+
+message(paste("running limma with TCC/iDEGES", Sys.time()))
+all_training$limmaVoom_iDEGES <- mclapply(seq_along(training_sets),
+  function(i) {
+    training <- training_sets[[i]]
+    obs <- obs_raw[[i]]
+    sf <- sleuth_filter_bool[[i]]
+    iDEGES_filter_and_run(obs, training, sf, norm_method = 'edger', test_method = 'voom')$result
   })
 
 save(all_training, all_validation, file = '../results/isoform_self_results.rda')

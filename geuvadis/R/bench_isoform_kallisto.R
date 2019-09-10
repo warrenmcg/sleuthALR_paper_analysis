@@ -175,6 +175,20 @@ all_results_kal$limmaVoom_denom <- mclapply(1:N_SIM,
     runVoom(cds, FALSE, FALSE, denom = denoms)
   }, mc.cores = n_cpu)
 
+message(paste('running limma with spike-ins', Sys.time()))
+all_results_kal$limmaVoom_iDEGES <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[,,i]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[,i]
+    filt_counts <- counts[filter, ]
+    cds <-  make_count_data_set(counts[filter, ], si)
+    run_iDEGES(cds, FALSE, FALSE, TRUE, design, "edger", "voom")
+  }, mc.cores = n_cpu)
+
 message(paste('running DESeq2', Sys.time()))
 all_results_kal$DESeq2 <- mclapply(1:N_SIM,
   function(i) {
@@ -214,6 +228,20 @@ all_results_kal$DESeq2_denom <- mclapply(1:N_SIM,
     denom <- denoms
     cds <- make_count_data_set(counts[filter, ], si)
     runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom)
+  }, mc.cores = n_cpu)
+
+message(paste('running DESeq2 with iDEGES/iDEGES', Sys.time()))
+all_results_kal$DESeq2_iDEGES <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[,,i]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[,i]
+    cds <- make_count_data_set(counts[filter, ], si)
+    design <- NULL
+    run_iDEGES(cds, FALSE, FALSE, TRUE, design, "deseq2", "deseq2")
   }, mc.cores = n_cpu)
 
 message(paste('running edgeR', Sys.time()))
@@ -258,6 +286,20 @@ all_results_kal$edgeR_denom <- mclapply(1:N_SIM,
     design <- NULL
     denom <- denoms
     runEdgeR(cds, FALSE, FALSE, TRUE, design, denom = denom)
+  }, mc.cores = n_cpu)
+
+message(paste('running edgeR with iDEGES/iDEGES', Sys.time()))
+all_results_kal$edgeR_iDEGES <- mclapply(1:N_SIM,
+  function(i) {
+    cat('Sample: ', i, '\n')
+    si <- sample_info[[i]]
+    counts <- obs_counts[,,i]
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    filter <- sleuth_filters[,i]
+    cds <- make_count_data_set(counts[filter, ], si)
+    design <- NULL
+    run_iDEGES(cds, FALSE, FALSE, TRUE, design, "edger", "edger")
   }, mc.cores = n_cpu)
 
 sleuth_res <- readRDS('sleuth_res.rds')

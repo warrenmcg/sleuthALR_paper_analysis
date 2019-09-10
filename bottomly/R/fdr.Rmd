@@ -50,8 +50,8 @@ Let’s rename things to be a bit more consistent with the main figures:
 
 ```{r}
 mapping <- c('sleuth.lrt' = 'sleuth', 'limmaVoom' = 'voom',
-  'DESeq2' = 'DESeq2', 'DESeq' = 'DESeq', 'Cuffdiff2' = 'Cuffdiff 2',
-  'edgeR' = 'edgeR', 'sleuth-ALR' = 'sleuth-ALR',
+  'DESeq2' = 'DESeq2', 'DESeq' = 'DESeq',
+  'edgeR' = 'edgeR', 'sleuthALR.wt' = 'sleuth-ALR',
   'ALDEx2.filt.overlap' = 'ALDEx2')
 self_fdr <- dplyr::filter(self_fdr, method != 'sleuth.wt')
 self_fdr <- dplyr::filter(self_fdr, !grepl("(wilcoxon|welch)", method))

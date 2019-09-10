@@ -2,17 +2,21 @@
 # take a look at mamabear::de_benchmark.R
 method_colors <- c(DESeq2 = '#2166ac', # blue
   `DESeq2 +\nC.N.` = '#103356',
+  `DESeq2 +\niDEGES` = '#5499de',
   `DESeq2 +\nRUVg` = '#5499de',
   edgeR = '#92c5de', # light blue
   `edgeR +\nC.N.` = '#4ea1ca',
+  `edgeR +\niDEGES` = '#c4e0ed',
   `edgeR +\nRUVg` = '#c4e0ed',
   limma = '#E69F00', # gold
   `limma +\nC.N.` = '#996900', # dark gold
+  `limma +\niDEGES` = '#996900',
   `sleuth LRT` = '#000000', # previously #999999
   `sleuth Wald` = '#999999',
-  `sleuth-ALR\nLRT` = '#FF3030', # firebrick1
-  `sleuth-ALR\nWald` = '#990000',
-  `ALDEx2\noverlap`= '#009E73' # green
+  `sleuth-CN\nLRT` = '#FF3030', # firebrick1
+  `sleuth-CN\nWald` = '#990000',
+  `ALDEx2`= '#009E73', # green
+  `ALDEx2 +\nC.N.` = '#009E73'
 )
 
 method_colors_old <- c('DESeq2' = "#0072B2",
@@ -24,13 +28,16 @@ method_colors_old <- c('DESeq2' = "#0072B2",
 
 full_method_colors <- c(
   DESeq2 = '#2166ac',
-  DESeq2_RUVg = '#2166ac',
   DESeq2_denom = '#2166ac',
+  DESeq2_iDEGES = '#2166ac',
+  DESeq2_RUVg = '#2166ac',
   edgeR = '#92c5de',
   edgeR_denom = '#92c5de',
+  edgeR_iDEGES = '#92c5de',
   edgeR_RUVg = '#92c5de',
   limmaVoom = '#E69F00',
   limmaVoom_denom = '#E69F00',
+  limmaVoom_iDEGES = '#E69F00',
   ALDEx2.iqlr.overlap = '#009E73',
   ALDEx2.iqlr.wilcoxon = '#CC79A7',
   ALDEx2.iqlr.welch = '#FFC64D',
@@ -48,8 +55,13 @@ full_method_colors <- c(
   sleuthALR.counts.wt = '#660066') # dark purple
 
 method_kal_ltys <- rep(1, length(full_method_colors))
-method_sal_ltys <- rep(2, length(full_method_colors))
-names(method_kal_ltys) <- names(method_sal_ltys) <- names(full_method_colors)
+methods <- names(full_method_colors)
+names(method_kal_ltys) <- methods
+method_kal_ltys[!grepl("denom", methods)] <- 2
+method_kal_ltys[grepl("ALR", methods)] <- 1
+method_kal_ltys[grepl("RUVg", methods)] <- 4
+method_kal_ltys[grepl("iDEGES", methods)] <- 3
+
 
 #' Load the differential expression truth
 #'

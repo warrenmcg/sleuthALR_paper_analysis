@@ -89,6 +89,9 @@ all_results_kal$limmaVoom <- runVoom(cds, FALSE, FALSE)
 message(paste('running limma with denom', Sys.time()))
 all_results_kal$limmaVoom_denom <- runVoom(cds, FALSE, FALSE, denom = denom)
 
+message(paste('running limma with iDEGES/TCC', Sys.time()))
+all_results_kal$limmaVoom_iDEGES <- run_iDEGES(cds, FALSE, FALSE, TRUE, norm_method = 'edger', test_method = 'voom')$results
+
 message(paste('running DESeq2', Sys.time()))
 all_results_kal$DESeq2 <- runDESeq2(cds, FALSE, FALSE, TRUE)$results
 
@@ -97,6 +100,9 @@ all_results_kal$DESeq2_RUVg <- runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom,
 
 message(paste('running DESeq2 with denom', Sys.time()))
 all_results_kal$DESeq2_denom <- runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom)$results
+
+message(paste('running DESeq2 with iDEGES/TCC', Sys.time()))
+all_results_kal$DESeq2_iDEGES <- run_iDEGES(cds, FALSE, FALSE, TRUE, norm_method = 'deseq2', test_method = 'deseq2')$results
 
 message(paste('running edgeR', Sys.time()))
 design <- NULL
@@ -109,6 +115,9 @@ all_results_kal$edgeR_RUVg <- runEdgeR(cds, FALSE, FALSE, TRUE, design, denom = 
 message(paste('running edgeR with denom', Sys.time()))
 design <- NULL
 all_results_kal$edgeR_denom <- runEdgeR(cds, FALSE, FALSE, TRUE, design, denom = denom)
+
+message(paste('running edgeR with iDEGES/TCC', Sys.time()))
+all_results_kal$edgeR_iDEGES <- run_iDEGES(cds, FALSE, FALSE, TRUE, norm_method = 'edger', test_method = 'edger')$results
 
 all_results_kal <- absSimSeq::rename_fc_list(all_results_kal)
 

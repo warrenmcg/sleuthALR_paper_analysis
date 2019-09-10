@@ -10,6 +10,7 @@ library("limma")
 library("sleuth")
 library("sleuthALR")
 library("ALDEx2")
+library("TCC")
 
 get_human_gene_names <- function(host = "dec2016.archive.ensembl.org") {
   mart <- biomaRt::useMart(biomart = "ENSEMBL_MART_ENSEMBL",
@@ -386,7 +387,7 @@ edgeR_filter_and_run <- function(counts, stc, match_filter, is_counts = TRUE) {
     cts <- cts[match_filter, ]
     normMat <- txi$length[match_filter, ]
     normMat <- normMat/exp(rowMeans(log(normMat)))
-    o <- log(calcNormFactors(cts/normMat)) + log(colSums(cts/normMat))
+    o <- log(edgeR::calcNormFactors(cts/normMat)) + log(colSums(cts/normMat))
 
     y <- DGEList(cts)
     y$offset <- t(t(log(normMat)) + o)
@@ -396,6 +397,41 @@ edgeR_filter_and_run <- function(counts, stc, match_filter, is_counts = TRUE) {
     colnames(design)[2] <- "pData(e)$conditionB"
   }
   res <- runEdgeR(cds, FALSE, FALSE, is_counts, design)
+
+  match_filter <- names(which(match_filter))
+
+  list(result = res, filter = match_filter)
+}
+
+iDEGES_filter_and_run <- function(counts, stc, match_filter, is_counts = TRUE,
+                                  norm_method = "edger", test_method = "edger") {
+  if (is_counts) {
+    counts <- round(counts)
+    mode(counts) <- 'integer'
+    which_targets <- edgeR_filter(counts)
+    match_filter <- match_filter & which_targets
+    cds <- make_count_data_set(counts[match_filter, ], stc)
+    design <- NULL
+  } else {
+    txi <- counts
+    # below boilerplate taken from tximport vignette and modified to include filtering
+    cts <- txi$counts
+    which_targets <- edgeR_filter(cts)
+    match_filter <- match_filter & which_targets
+
+    cts <- cts[match_filter, ]
+    normMat <- txi$length[match_filter, ]
+    normMat <- normMat/exp(rowMeans(log(normMat)))
+    o <- log(edgeR::calcNormFactors(cts/normMat)) + log(colSums(cts/normMat))
+
+    y <- DGEList(cts)
+    y$offset <- t(t(log(normMat)) + o)
+    cds <- y
+    # y is now ready for estimate dispersion functions see edgeR User's Guide
+    design <- model.matrix(~condition, stc)
+    colnames(design)[2] <- "pData(e)$conditionB"
+  }
+  res <- run_iDEGES(cds, FALSE, FALSE, is_counts, design, norm_method, test_method)
 
   match_filter <- names(which(match_filter))
 
@@ -757,7 +793,7 @@ runEdgeR <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE
     norm_factors <- DESeq2::estimateSizeFactorsForMatrix(dgel$counts, controlGenes = denom_bool)
     dgel$samples$norm.factors <- norm_factors
   } else {
-    dgel <- calcNormFactors(dgel)
+    dgel <- edgeR::calcNormFactors(dgel)
   }
 
   dgel <- estimateGLMCommonDisp(dgel, design)
@@ -793,7 +829,7 @@ runEdgeR <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE
 runEdgeRRobust <- function(e, as_gene = TRUE) {
   design <- model.matrix(~ pData(e)$condition)
   dgel <- DGEList(exprs(e))
-  dgel <- calcNormFactors(dgel)
+  dgel <- edgeR::calcNormFactors(dgel)
   # settings for robust from robinson_lab/edgeR_robust/robust_simulation.R
   dgel <- estimateGLMRobustDisp(dgel, design, maxit=6)
   edger.fit <- glmFit(dgel, design)
@@ -831,7 +867,7 @@ runVoom <- function(e, as_gene = TRUE, compute_filter = FALSE, denom = NULL) {
     norm_factors <- DESeq2::estimateSizeFactorsForMatrix(dgel$counts, controlGenes = denom_bool)
     dgel$samples$norm.factors <- norm_factors
   } else {
-    dgel <- calcNormFactors(dgel)
+    dgel <- edgeR::calcNormFactors(dgel)
   }
   v <- voom(dgel,design,plot=FALSE)
   fit <- lmFit(v,design)
@@ -846,6 +882,53 @@ runVoom <- function(e, as_gene = TRUE, compute_filter = FALSE, denom = NULL) {
     pval = pvals,
     qval = padj,
     beta = tt$logFC,
+    stringsAsFactors = FALSE),
+  as_gene = as_gene)
+}
+
+run_iDEGES <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE, design = NULL,
+                   norm_method = "edger", test_method = "edger") {
+  norm_method <- match.arg(norm_method, c("edger", "tmm", "deseq2"))
+  test_method <- match.arg(test_method, c("edger", "deseq2", "voom", "limma"))
+
+  norm_method <- ifelse(norm_method == "edger", "tmm", norm_method)
+  test_method <- ifelse(test_method == "limma", "voom", test_method)
+
+  if (is_counts) {
+    design <- model.matrix(~ pData(e)$condition)
+    dgel <- DGEList(exprs(e))
+  } else {
+    dgel <- e
+  }
+
+  if (compute_filter) {
+    # Section 2.6 in edgeR vignette
+    # https://www.bioconductor.org/packages/3.3/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf
+    keep <- rowSums(cpm(dgel) > 1) >= (ncol(dgel) / 2)
+    dgel <- dgel[keep, , keep.lib.sizes=FALSE]
+  }
+
+  tcc <- new("TCC", dgel$counts, design[,2])
+  tcc <- TCC::calcNormFactors(tcc, norm.method = norm_method, test.method = test_method,
+                         iteration = 3, FDR = 0.05, floorPDEG = 0.05)
+
+  if (test_method == "edger") {
+    tcc <- TCC::estimateDE(tcc, test.method = test_method, FDR = 0.05,
+                           floor = 0.5, design = design, coef = 2)
+  } else {
+    tcc <- TCC::estimateDE(tcc, test.method = test_method, FDR = 0.05,
+                           floor = 0.5)
+  }
+  result <- TCC::getResult(tcc, sort = TRUE)
+
+  pvals <- result$p.value
+  padj <- p.adjust(pvals,method="BH")
+  padj[is.na(padj)] <- 1
+
+  rename_target_id(data.frame(target_id = result$gene_id,
+    pval = pvals,
+    qval = padj,
+    beta = result$m.value,
     stringsAsFactors = FALSE),
   as_gene = as_gene)
 }
