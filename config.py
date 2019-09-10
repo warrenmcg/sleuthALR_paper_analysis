@@ -60,6 +60,7 @@ YEAST_KALLISTO_INDEX = BASE + '/index/' + YEAST_NAME + '.kidx'
 YEAST_SALMON_INDEX = BASE + '/index/' + YEAST_NAME + '.sidx'
 
 ERCC_FILE = 'ERCC92_data.txt'
+ERCC_FA = 'ERCC92.fa'
 
 ###
 # functions

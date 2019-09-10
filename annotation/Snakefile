@@ -7,6 +7,7 @@ rule all:
         ###
         TRANSCRIPTOME_FA,
         KALLISTO_INDEX,
+        KALLISTO_SPIKEIN_INDEX,
         SALMON_INDEX,
 
         ###
@@ -27,7 +28,8 @@ rule all:
         ###
         # spike-ins
         ###
-        ERCC_FILE
+        ERCC_FILE,
+        ERCC_FA
 
 rule get_transcriptome:
     output:
@@ -39,6 +41,15 @@ rule get_transcriptome:
         ' gunzip gencode.v25.transcripts.fa.gz && '
         ' awk -F\'|\' \'{{print $1}}\' gencode.v25.transcripts.fa > {output} && '
         ' rm gencode.v25.transcripts.fa'
+
+rule get_spikein_transcriptome:
+    input:
+        ERCC_FA,
+        TRANSCRIPTOME_FA
+    output:
+        SPIKEIN_FA
+    shell:
+        ' '.join(['cat', TRANSCRIPTOME_FA, ERCC_FA, '>', SPIKEIN_FA])
 
 rule kallisto_index:
     input:
@@ -189,11 +200,13 @@ rule yeast_annos:
 
 rule get_ercc:
     output:
-        ERCC_FILE
+        ERCC_FILE,
+        ERCC_FA
     shell:
         'curl -o ERCC92_data.txt --silent'
         ' https://assets.thermofisher.com/TFS-Assets/LSG/manuals/cms_095046.txt'
         ' && '
         'curl -o ERCC92.zip --silent'
         ' https://assets.thermofisher.com/TFS-Assets/LSG/manuals/ERCC92.zip'
-        ' && unzip ERCC92.zip && rm ERCC92.zip'
+        ' && unzip ERCC92.zip && rm ERCC92.zip && '
+        ' sed -i \'s/ERCC-/ERCC_/\' {output[1]}'
