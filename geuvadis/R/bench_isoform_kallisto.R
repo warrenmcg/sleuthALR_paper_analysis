@@ -7,8 +7,7 @@ if (length(args) != 2) {
 
 # temporary for debugging
 # n_cpu <- 20
-# sim_name <- 'isoform_3_3_20_1_1'
-sim_name <- 'isoform_5_5_15_387_1'
+# sim_name <- 'isoform_5_5_15_387_1'
 
 n_cpu <- args[1]
 sim_name <- args[2]
@@ -50,8 +49,7 @@ sleuth_res <- mclapply(1:N_SIM,
   function(i) {
     cat('Run: ', i, '\n')
     si <- sample_info[[i]]
-    so <- run_sleuth_prep(si, num_cores = 1, normalize = FALSE)
-    sir <-  list(so = so)
+    sir <- run_sleuth(si, gene_mode = NULL, max_bootstrap = 100, num_cores = 1)
     filter <- sir$so$filter_bool
     counts <- sleuth::sleuth_to_matrix(sir$so, "obs_raw", "est_counts")
     list(sleuth.lrt = sir$sleuth.lrt, sleuth.wt = sir$sleuth.wt, filter = filter,
@@ -184,7 +182,7 @@ all_results_kal$DESeq2 <- mclapply(1:N_SIM,
     mode(counts) <- 'integer'
     filter <- sleuth_filters[[i]]
     cds <- make_count_data_set(counts[filter, ], si)
-    runDESeq2(cds, FALSE, FALSE, TRUE)$results
+    runDESeq2(cds, FALSE, FALSE, TRUE)
   }, mc.cores = n_cpu)
 
 message(paste('running DESeq2 with RUVg', Sys.time()))
@@ -198,7 +196,7 @@ all_results_kal$DESeq2_RUVg <- mclapply(1:N_SIM,
     filter <- sleuth_filters[[i]]
     denom <- denoms
     cds <- make_count_data_set(counts[filter, ], si)
-    runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom, RUVg = TRUE)$results
+    runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom, RUVg = TRUE)
   }, mc.cores = n_cpu)
 
 message(paste('running DESeq2 with spike-ins', Sys.time()))
@@ -212,7 +210,7 @@ all_results_kal$DESeq2_denom <- mclapply(1:N_SIM,
     filter <- sleuth_filters[[i]]
     denom <- denoms
     cds <- make_count_data_set(counts[filter, ], si)
-    runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom)$results
+    runDESeq2(cds, FALSE, FALSE, TRUE, denom = denom)
   }, mc.cores = n_cpu)
 
 message(paste('running edgeR', Sys.time()))
