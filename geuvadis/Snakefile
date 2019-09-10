@@ -6,15 +6,16 @@ rule init:
     output:
         'metadata/geu_meta.RData',
         'metadata/accessions.txt',
+        'metadata/accs2samples.txt',
         'metadata/finn_samples.txt'
     shell:
         source_r('R', 'metadata.R')
 
 # TODO: put this at the beginning of the pipeline (run it before everything)
-ACCESSION_FILE = 'metadata/accessions.txt'
+ACCESSION_FILE = 'metadata/accs2samples.txt'
 ERA_SINGLE = []
 if isfile(ACCESSION_FILE):
-    ERA_SINGLE = get_sample_ids(ACCESSION_FILE)
+    ERA_SINGLE = get_acc_sample_dict(ACCESSION_FILE)
 else:
     # force running the init
     print('Warning: the accession file is missing or the init script has not yet been run. Running now.')
@@ -42,6 +43,7 @@ rule all:
 
         # used for null experiment
         expand('results/finn_samples/{id}/abundance.h5', id = FINN_SAMPLES),
+        'results/finn_sleuth.rds',
         'results/null_resampling_fdr_report.html',
 
         # do a large experiment so that we can do permutations
@@ -63,20 +65,24 @@ def finn_sample_input(wildcards):
     id = wildcards['id']
     return expand('finn_samples/{id}/{id}_{i}.fastq.gz', id = id, i = [1, 2])
 
+def get_accession(wildcards):
+    id = wildcards['id']
+    return ERA_SINGLE[id]['accession']
+
 rule fastq_dump:
-    input:
-        ERA_SINGLE
+    params:
+        id = get_accession,
+        dir = 'finn_samples/{id,[A-Z]+[0-9]+}'
     output:
-        'finn_samples/{id,[A-Z]+[0-9]+}',
         'finn_samples/{id}/{id}_1.fastq.gz',
         'finn_samples/{id}/{id}_2.fastq.gz'
     threads: 1
     shell:
         'mkdir finn_samples/{wildcards.id} && '
-        ' wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR188/{input[0]}/{input[0]}_1.fastq.gz && '
-        ' wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR188/{input[0]}/{input[0]}_2.fastq.gz && '
-        ' rename \'s/{input[0]}/{wildcards.id}/\' {input[0]}_*fasta.gz && '
-        ' mv {output[1]} {output[2]} {output[0]}'
+        ' wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR188/{params.id}/{params.id}_1.fastq.gz && '
+        ' wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR188/{params.id}/{params.id}_2.fastq.gz && '
+        ' rename \'s/{params.id}/{wildcards.id}/\' {params.id}_*fasta.gz && '
+        ' mv {output[0]} {output[1]} {params.dir}'
 
 rule finn_samples:
     input:

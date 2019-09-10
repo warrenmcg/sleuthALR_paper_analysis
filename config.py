@@ -7,6 +7,7 @@
 # TODO: make this a absolute path before submission
 from os.path import expanduser, splitext
 from os import getenv
+from pandas import read_table
 
 HOME = expanduser('~')
 BASE = HOME + '/sleuth_paper_analysis'
@@ -41,7 +42,7 @@ PANDOC = BIN + '/pandoc'
 ###
 # simulation wildcards
 ###
-SIM_NAMES = ['run' + format(i, '02d') for i in range(1,16)]
+SIM_NAMES = ['run' + format(i, '02d') for i in range(1,31)]
 SIM_IDS = ['sample_' + format(i, '02d') for i in range(1,11)]
 
 ###
@@ -107,9 +108,9 @@ def source_rmd(base, file_name, output_name = None):
         output_name += '.html'
     return UPDATED_PATH + ' OMP_NUM_THREADS=1 Rscript --vanilla --default-packages=methods,stats,utils,knitr -e \'setwd("{0}")\' -e \'rmarkdown::render("{1}", output_file = "{2}")\''.format(base, file_name, output_name)
 
-def get_sample_ids(fname):
-    ret = []
-    with open(fname, 'r') as fhandle:
-        for line in fhandle:
-            ret.append(line.strip("\n"))
-    return ret
+def get_acc_sample_dict(fname):
+    ret_pd = read_table(fname)
+    ret_pd.index = ret_pd.name.tolist()
+    ret = ret_pd.drop(columns = 'name')
+    RET_DICT = ret.T.to_dict()
+    return RET_DICT

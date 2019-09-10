@@ -74,6 +74,9 @@ finn_egeu$sample_name <- paste(finn_egeu$sample, finn_egeu$lab_num, sep = "_")
 write.table(finn_egeu$run, '../metadata/accessions.txt', sep = "\n", row.names = F, col.names = F, quote = F)
 write.table(finn_egeu$sample_name, '../metadata/finn_samples.txt', sep = "\n", row.names = F, col.names = F, quote = F)
 
+metadata <- data.frame(accession = finn_egeu$run, name = finn_egeu$sample_name)
+write.table(metadata, '../metadata/accs2samples.txt', sep = "\t", row.names = F, quote = F)
+
 # high-level stats
 geu_meta %>%
   group_by(population, sex) %>%
