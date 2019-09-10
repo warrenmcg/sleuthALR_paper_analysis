@@ -31,7 +31,7 @@ theme_hp <- function() {
 
 ### CODE FOR Figures 2 and S2 -- Main Benchmarks ###
 
-make_benchmark_plots <- function(benchmarks, to_include, new_labels_kal) {
+make_benchmark_plots <- function(benchmarks, to_include, new_labels_kal, cores = 1) {
   benchmarks <- benchmarks[sort(names(benchmarks))]
 
   subset_benchmarks <- benchmarks[to_include]
@@ -41,20 +41,10 @@ make_benchmark_plots <- function(benchmarks, to_include, new_labels_kal) {
     bench_list <- subset_benchmarks[[i]]
     original_label <- subset_names[i]
     new_label <- new_names_kal[i]
-    lapply(bench_list, function(bench) {
+    mclapply(bench_list, function(bench) {
       new_bench <- rename_benchmark(bench, original_label, new_label, join_mode = "intersect")
-      if (grepl("RUVg", original_label)) {
-        new_bench$line_mapping <- 4
-        names(new_bench$line_mapping) <- new_label
-      } else if (!grepl("denom", original_label)) {
-        new_bench$line_mapping <- 2
-        names(new_bench$line_mapping) <- new_label
-      }
-      if (original_label == "ALDEx2.denom.overlap") {
-        new_bench$color_mapping <- c("ALDEx2+denom" = '#009E73')
-      }
       new_bench
-    })
+    }, mc.cores = cores)
   })
   color_mapping <- sapply(subset_benchmarks, function(x) x[[1]]$color_mapping)
   line_mapping <- sapply(subset_benchmarks, function(x) x[[1]]$line_mapping)
@@ -62,12 +52,12 @@ make_benchmark_plots <- function(benchmarks, to_include, new_labels_kal) {
 
   subset_benchmarks <- subset_benchmarks[sort(names(subset_benchmarks))]
 
-  subset_fdr_data <- lapply(subset_benchmarks,
+  subset_fdr_data <- mclapply(subset_benchmarks,
     function(bench) {
       fdr <- suppressMessages(get_fdr(bench))
       fdr$pvals
-    })
-  subset_fdr_data <- dplyr::bind_rows(subset_fdr_data)
+    }, mc.cores = cores)
+  subset_fdr_data <- data.table::rbindlist(subset_fdr_data)
 
   p <- ggplot(subset_fdr_data, aes(true_fdr, sensitivity))
   p <- p + geom_path(aes(color = method, linetype = method),
