@@ -487,7 +487,14 @@ run_alr <- function(sample_info,
     run_models = FALSE,
     ...)
 
-  so <- sleuth_fit(so, so$full_formula, 'full', which_var = which_var, shrink_fun = shrink_fun)
+  extra_opts <- list(...)
+  if ("shrink_fun" %in% names(extra_opts)) {
+    shrink_fun <- extra_opts$shrink_fun
+  } else {
+    shrink_fun <- sleuth::basic_shrink_fun
+  }
+
+  so <- sleuth_fit(so, ~ condition, 'full', which_var = which_var, shrink_fun = shrink_fun)
   so <- sleuth_wt(so, 'conditionB')
   so <- sleuth_fit(so, ~ 1, 'reduced', which_var = which_var, shrink_fun = shrink_fun)
   so <- sleuth_lrt(so, 'reduced', 'full')
@@ -544,9 +551,8 @@ run_sleuth <- function(sample_info,
     stop('Unrecognized mode for "run_sleuth"')
   }
 
-  res$so <- so
-
   res <- list(sleuth.lrt = lrt, sleuth.wt = wt)
+  res$so <- so
   res
 }
 
@@ -709,6 +715,7 @@ runDESeq2 <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRU
     dds <- DESeq(dds, quiet=TRUE)
   }
 
+  res <- results(dds)
   beta <- res$log2FoldChange
   pvals <- res$pvalue
   padj <- res$padj
@@ -737,7 +744,7 @@ runEdgeR <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE
     dgel <- dgel[keep, , keep.lib.sizes=FALSE]
   }
 
-  if (!is.null(denom) & RUVg) {
+  if (!is.null(denom) && RUVg) {
     set <- RUVSeq::RUVg(exprs(e), denom, k = 1)
     w_vals <- as.numeric(set$W)
     pData(e)$W <- as.numeric(set$W)
@@ -752,6 +759,7 @@ runEdgeR <- function(e, as_gene = TRUE, compute_filter = FALSE, is_counts = TRUE
   } else {
     dgel <- calcNormFactors(dgel)
   }
+
   dgel <- estimateGLMCommonDisp(dgel, design)
   dgel <- estimateGLMTrendedDisp(dgel, design)
   dgel <- estimateGLMTagwiseDisp(dgel, design)
