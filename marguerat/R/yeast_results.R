@@ -134,9 +134,9 @@ mod_sig_tab <- sig_tab[!grepl("lrt", rownames(sig_tab)), ]
 mod_sig_tab <- mod_sig_tab[!grepl("counts", rownames(mod_sig_tab)), ]
 rownames(mod_sig_tab) <- c("sleuth", "sleuth-ALR", "sleuth-ALR (trend)",
   "ALDEx2 IQLR overlap", "ALDEx2 IQLR Welch", "ALDEx2 IQLR Wilcoxon",
-  "ALDEx2 ALR overlap", "ALDEx2 ALR Welch", "ALDEx2 ALR Wilcoxon",
-  "limma", "limma + C.N.", "DESeq2", "DESeq2 + RUVg",
-  "DESeq2 + C.N.", "edgeR", "edgeR + RUVg", "edgeR + C.N.")
+  "ALDEx2 + CN overlap", "ALDEx2 + CN Welch", "ALDEx2 + CN Wilcoxon",
+  "limma", "limma + CN", "DESeq2", "DESeq2 + RUVg",
+  "DESeq2 + CN", "edgeR", "edgeR + RUVg", "edgeR + CN")
 
 yeast_annos <- transcript_gene_mapping
 tested_ids <- yeast_annos$gene_id[which(yeast_annos$target_id %in% all_results_kal[[1]]$target_id)]

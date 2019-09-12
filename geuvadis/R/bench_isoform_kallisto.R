@@ -131,7 +131,7 @@ all_results_kal$ALDEx2.clr.wilcoxon <- lapply(aldex2_clr_res, '[[', 'ALDEx2.wilc
 rm(aldex2_clr_res)
 
 message(paste('running ALDEx2 with spike-ins', Sys.time()))
-aldex2_denom_res <- mclapply(1:N_SIM,
+aldex2_CN_res <- mclapply(1:N_SIM,
   function(i) {
     cat('Run: ', i, '\n')
     si <- sample_info[[i]]
@@ -142,10 +142,10 @@ aldex2_denom_res <- mclapply(1:N_SIM,
          ALDEx2.welch = aldex2$welch,
          ALDEx2.wilcoxon = aldex2$wilcoxon)
   }, mc.cores = n_cpu)
-all_results_kal$ALDEx2.denom.overlap <- lapply(aldex2_denom_res, '[[', 'ALDEx2.overlap')
-all_results_kal$ALDEx2.denom.welch <- lapply(aldex2_denom_res, '[[', 'ALDEx2.welch')
-all_results_kal$ALDEx2.denom.wilcoxon <- lapply(aldex2_denom_res, '[[', 'ALDEx2.wilcoxon')
-rm(aldex2_denom_res)
+all_results_kal$ALDEx2.denom.overlap <- lapply(aldex2_CN_res, '[[', 'ALDEx2.overlap')
+all_results_kal$ALDEx2.denom.welch <- lapply(aldex2_CN_res, '[[', 'ALDEx2.welch')
+all_results_kal$ALDEx2.denom.wilcoxon <- lapply(aldex2_CN_res, '[[', 'ALDEx2.wilcoxon')
+rm(aldex2_CN_res)
 
 message(paste('running limma', Sys.time()))
 all_results_kal$limmaVoom <- mclapply(1:N_SIM,
@@ -162,7 +162,7 @@ all_results_kal$limmaVoom <- mclapply(1:N_SIM,
   }, mc.cores = n_cpu)
 
 message(paste('running limma with spike-ins', Sys.time()))
-all_results_kal$limmaVoom_denom <- mclapply(1:N_SIM,
+all_results_kal$limmaVoom_CN <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
     si <- sample_info[[i]]
@@ -217,7 +217,7 @@ all_results_kal$DESeq2_RUVg <- mclapply(1:N_SIM,
   }, mc.cores = n_cpu)
 
 message(paste('running DESeq2 with spike-ins', Sys.time()))
-all_results_kal$DESeq2_denom <- mclapply(1:N_SIM,
+all_results_kal$DESeq2_CN <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
     si <- sample_info[[i]]
@@ -274,7 +274,7 @@ all_results_kal$edgeR_RUVg <- mclapply(1:N_SIM,
   }, mc.cores = n_cpu)
 
 message(paste('running edgeR with spike-ins', Sys.time()))
-all_results_kal$edgeR_denom <- mclapply(1:N_SIM,
+all_results_kal$edgeR_CN <- mclapply(1:N_SIM,
   function(i) {
     cat('Sample: ', i, '\n')
     si <- sample_info[[i]]

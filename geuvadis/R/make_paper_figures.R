@@ -16,13 +16,15 @@ benchmarks <- lapply(sim_types, function(sim_type) {
 
 ## FIGURE 2 and S2 ##
 message('making figures 2 and S2')
-to_include <- c('sleuth.lrt', 'ALDEx2.iqlr.overlap', 'DESeq2', 'edgeR',
-  'limmaVoom', 'DESeq2_RUVg', 'sleuthALR.lrt', 'ALDEx2.denom.overlap',
-  'DESeq2_denom', 'edgeR_denom', 'limmaVoom_denom', 'edgeR_RUVg')
+to_include <- c('sleuth.lrt', 'sleuthALR.lrt', 'ALDEx2.iqlr.overlap',
+  'ALDEx2.CN.overlap', 'DESeq2', 'DESeq2_CN', 'DESeq2_iDEGES',
+  'DESeq2_RUVg', 'edgeR', 'edgeR_CN', 'edgeR_RUVg', 'edgeR_iDEGES', 
+  'limmaVoom', 'limmaVoom_CN', 'limmaVoom_iDEGES')
 
-new_labels <- c('sleuth', 'ALDEx2 IQLR', 'DESeq2', 'edgeR',
-  'limma', 'DESeq2+RUVg', 'sleuth-ALR', 'ALDEx2+denom',
-  'DESeq2+denom', 'edgeR+denom', 'limma+denom', 'edgeR+RUVg')
+new_labels <- c('sleuth', 'sleuth-CN', 'ALDEx2', 'ALDEx2+\nCN',
+  'DESeq2', 'DESeq2 +\nCN', 'DESeq2 +\niDEGES', 'DESeq2 +\nRUVg',
+  'edgeR', 'edgeR +\nCN', 'edgeR +\niDEGES', 'edgeR +\nRUVg'
+  'limma', 'limma +\nCN', 'limma +\niDEGES')
 
 graphs <- lapply(1:3, function(i) {
   b <- benchmarks[[i]]
@@ -64,10 +66,10 @@ save_plot(filename, p, base_width = 6.5)
 message("making Figure 4 and Figure S6")
 mapping <- c('sleuth.lrt' = 'sleuth LRT', 'sleuth.wt' = 'sleuth Wald',
   'sleuthALR.lrt' = 'sleuth-ALR\nLRT', 'sleuthALR.wt' = 'sleuth-ALR\nWald',
-  'limmaVoom' = 'limma +\nC.N.', 'limmaVoom_old' = 'limma',
-  'DESeq2' = 'DESeq2 +\nC.N.', 'DESeq2_old' = 'DESeq2', 'DESeq2_RUVg' = 'DESeq2 +\nRUVg',
-  'edgeR' = 'edgeR +\nC.N.', 'edgeR_old' = 'edgeR', 'edgeR_RUVg' = 'edgeR +\nRUVg',
-  'ALDEx2.filt.overlap' = 'ALDEx2\noverlap')
+  'limmaVoom' = 'limma +\nCN', 'limmaVoom_old' = 'limma',
+  'DESeq2' = 'DESeq2 +\nCN', 'DESeq2_old' = 'DESeq2', 'DESeq2_RUVg' = 'DESeq2 +\nRUVg',
+  'edgeR' = 'edgeR +\nCN', 'edgeR_old' = 'edgeR', 'edgeR_RUVg' = 'edgeR +\nRUVg',
+  'ALDEx2.filt.overlap' = 'ALDEx2')
 
 iso_file <- '../../bottomly/results/isoform_self_benchmark.rds'
 bench <- readRDS(iso_file)

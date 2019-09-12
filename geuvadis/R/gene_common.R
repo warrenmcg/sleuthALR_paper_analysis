@@ -1,22 +1,22 @@
 # most of these colors were pulled from the colorblind pallet
 # take a look at mamabear::de_benchmark.R
 method_colors <- c(DESeq2 = '#2166ac', # blue
-  `DESeq2 +\nC.N.` = '#103356',
+  `DESeq2 +\nCN` = '#103356',
   `DESeq2 +\niDEGES` = '#5499de',
   `DESeq2 +\nRUVg` = '#5499de',
   edgeR = '#92c5de', # light blue
-  `edgeR +\nC.N.` = '#4ea1ca',
+  `edgeR +\nCN` = '#4ea1ca',
   `edgeR +\niDEGES` = '#c4e0ed',
   `edgeR +\nRUVg` = '#c4e0ed',
   limma = '#E69F00', # gold
-  `limma +\nC.N.` = '#996900', # dark gold
+  `limma +\nCN` = '#996900', # dark gold
   `limma +\niDEGES` = '#996900',
   `sleuth LRT` = '#000000', # previously #999999
   `sleuth Wald` = '#999999',
-  `sleuth-CN\nLRT` = '#FF3030', # firebrick1
-  `sleuth-CN\nWald` = '#990000',
+  `sleuth-CN\nWald` = '#FF3030', # firebrick1
+  `sleuth-CN\nLRT` = '#990000',
   `ALDEx2`= '#009E73', # green
-  `ALDEx2 +\nC.N.` = '#009E73'
+  `ALDEx2 +\nCN` = '#009E73'
 )
 
 method_colors_old <- c('DESeq2' = "#0072B2",
@@ -28,15 +28,15 @@ method_colors_old <- c('DESeq2' = "#0072B2",
 
 full_method_colors <- c(
   DESeq2 = '#2166ac',
-  DESeq2_denom = '#2166ac',
+  DESeq2_CN = '#2166ac',
   DESeq2_iDEGES = '#2166ac',
   DESeq2_RUVg = '#2166ac',
   edgeR = '#92c5de',
-  edgeR_denom = '#92c5de',
+  edgeR_CN = '#92c5de',
   edgeR_iDEGES = '#92c5de',
   edgeR_RUVg = '#92c5de',
   limmaVoom = '#E69F00',
-  limmaVoom_denom = '#E69F00',
+  limmaVoom_CN = '#E69F00',
   limmaVoom_iDEGES = '#E69F00',
   ALDEx2.iqlr.overlap = '#009E73',
   ALDEx2.iqlr.wilcoxon = '#CC79A7',
@@ -44,9 +44,9 @@ full_method_colors <- c(
   ALDEx2.clr.overlap = '#009E73',
   ALDEx2.clr.wilcoxon = '#CC79A7',
   ALDEx2.clr.welch = '#FFC64D',
-  ALDEx2.denom.overlap = '#009E73',
-  ALDEx2.denom.wilcoxon = '#CC79A7',
-  ALDEx2.denom.welch = '#FFC64D',
+  ALDEx2.CN.overlap = '#009E73',
+  ALDEx2.CN.wilcoxon = '#CC79A7',
+  ALDEx2.CN.welch = '#FFC64D',
   sleuth.lrt = '#000000',
   sleuth.wt = '#000000',
   sleuthALR.lrt = '#FF3030',
@@ -57,7 +57,7 @@ full_method_colors <- c(
 method_kal_ltys <- rep(1, length(full_method_colors))
 methods <- names(full_method_colors)
 names(method_kal_ltys) <- methods
-method_kal_ltys[!grepl("denom", methods)] <- 2
+method_kal_ltys[!grepl("CN", methods)] <- 2
 method_kal_ltys[grepl("ALR", methods)] <- 1
 method_kal_ltys[grepl("RUVg", methods)] <- 4
 method_kal_ltys[grepl("iDEGES", methods)] <- 3
